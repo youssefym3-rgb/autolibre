@@ -475,7 +475,7 @@ function toggleMenu(e){
   if(!mnu.classList.contains('hidden')){mnu.classList.add('hidden');return}
   mnu.innerHTML=`<div style="padding:10px 12px"><b>${me.name}</b><br><span style="font-size:13px;color:var(--muted)">${me.type==='pro'?'Concesionario':'Particular'} · Plan ${me.plan}</span></div><hr>
     <a onclick="go('dashboard')">▤ Mi panel</a><a onclick="go('publish')">＋ Publicar coche</a>
-    <a onclick="go('favorites')">♥ Favoritos (${favIds.size})</a><a onclick="go('messages')">✉ Mensajes</a>
+    <a onclick="go('favorites')">♥ Favoritos (${favIds.size})</a><a onclick="go('messages')">✉ Mensajes</a><a onclick="openMyAlerts()">🔔 Mis alertas</a>
     ${me.role==='admin'?`<hr><a onclick="go('admin')" style="color:var(--danger);font-weight:700">⚙ Administración</a>`:''}
     <hr><a onclick="logout()">⏻ Cerrar sesión</a>`;
   mnu.classList.remove('hidden');
@@ -501,7 +501,7 @@ function carCard(c){
         <span class="spec">${c.gear}</span><span class="spec">${c.power} CV</span>
       </div>
       <div class="car-foot">
-        <div class="price">${euro(c.price)}</div>
+        <div class="price">${euro(c.price)}${c.priceLabel==='good'?' <span style="background:#eafaf3;color:#0fa968;font-size:11px;font-weight:800;padding:2px 7px;border-radius:20px;vertical-align:middle">↓ Buen precio</span>':c.priceLabel==='fair'?' <span style="background:#eef4ff;color:#0a58ca;font-size:11px;font-weight:800;padding:2px 7px;border-radius:20px;vertical-align:middle">Precio justo</span>':''}</div>
         <div class="seller-mini">${c.owner&&c.owner.type==='pro'?'🏢':'👤'} ${c.owner?c.owner.name.split(' ')[0]:''}</div>
       </div>
     </div>
@@ -625,7 +625,7 @@ async function renderResults(){
     </aside>
     <div class="results-main">
       <div class="results-top"><div class="count">${total} coche${total!==1?'s':''} <span>encontrados</span></div>
-        <div class="sort-wrap"><span style="font-size:14px;color:var(--muted)">Ordenar:</span>
+        <div class="sort-wrap"><button class="btn btn-ghost btn-sm" onclick="openCreateAlert()" title="Recibe un email cuando se publique un coche que encaje con estos filtros">🔔 Crear alerta</button><span style="font-size:14px;color:var(--muted)">Ordenar:</span>
           <select onchange="setF('sort',this.value)">
             <option value="relevance">Relevancia</option>
             <option value="price-asc" ${f.sort==='price-asc'?'selected':''}>Precio ↑</option>
@@ -688,7 +688,7 @@ async function renderDetail(){
         ${similar.length?`<section class="block" style="padding-top:34px"><div class="section-head"><div><h2 style="font-size:22px">Coches similares</h2></div></div><div class="grid-cars">${similar.map(carCard).join('')}</div></section>`:''}
       </div>
       <div><div class="side-card">
-        <p class="big-price">${euro(c.price)}</p>
+        <p class="big-price">${euro(c.price)} ${c.priceLabel==='good'?'<span style="background:#eafaf3;color:#0fa968;font-size:14px;font-weight:800;padding:4px 12px;border-radius:20px;vertical-align:middle">↓ Buen precio</span>':c.priceLabel==='fair'?'<span style="background:#eef4ff;color:#0a58ca;font-size:14px;font-weight:800;padding:4px 12px;border-radius:20px;vertical-align:middle">Precio justo</span>':''}</p>
         <p class="fin">Precio al contado</p>
         <button class="btn btn-primary btn-block btn-lg" onclick="contactSeller(${c.id},'${(c.brand+' '+c.model).replace(/'/g,'')}')">✉ Contactar con el vendedor</button>
         <button class="btn btn-ghost btn-block" style="margin-top:10px" onclick="this.textContent='📞 '+${JSON.stringify(u.phone||'—')};this.disabled=true">📞 Ver teléfono</button>
@@ -827,7 +827,7 @@ async function renderDashboard(){
   const totalViews=cars.reduce((s,c)=>s+c.views,0);
   const active=cars.filter(c=>c.status==='active').length;
   document.getElementById('app').innerHTML=`<div class="container"><div class="dash-layout">
-    <aside class="dash-side"><a class="active" onclick="go('dashboard')">▤ Mis anuncios</a><a onclick="go('publish')">＋ Publicar coche</a><a onclick="go('favorites')">♥ Favoritos</a><a onclick="go('messages')">✉ Mensajes ${threads.length?`(${threads.length})`:''}</a><a onclick="logout()">⏻ Cerrar sesión</a></aside>
+    <aside class="dash-side"><a class="active" onclick="go('dashboard')">▤ Mis anuncios</a><a onclick="go('publish')">＋ Publicar coche</a><a onclick="go('favorites')">♥ Favoritos</a><a onclick="openMyAlerts()">🔔 Mis alertas</a><a onclick="go('messages')">✉ Mensajes ${threads.length?`(${threads.length})`:''}</a><a onclick="logout()">⏻ Cerrar sesión</a></aside>
     <div>
       <div class="section-head"><div><h2>Hola, ${me.name.split(' ')[0]} 👋</h2><p>${me.type==='pro'?'Panel de concesionario':'Tu panel de vendedor'} · Plan ${me.plan}</p></div><button class="btn btn-accent" onclick="go('publish')">＋ Publicar coche</button></div>
       <div class="dash-stats">
@@ -932,6 +932,48 @@ window.addEventListener('load',async()=>{
   else if(h&&['home','results','publish','dashboard','favorites','messages','admin'].includes(h))go(h,false);
   else renderHome();
 });
+
+
+/* ---------- ALERTAS DE BÚSQUEDA ---------- */
+function alertNameFromFilters(f){
+  const parts=[];
+  if(f.brand)parts.push(f.brand+(f.model?' '+f.model:''));
+  else if(f.q)parts.push('"'+f.q+'"');
+  else parts.push('Cualquier coche');
+  if(f.priceMax)parts.push('hasta '+fmt(+f.priceMax)+' €');
+  if(f.yearMin)parts.push('desde '+f.yearMin);
+  if(f.kmMax)parts.push('máx '+fmt(+f.kmMax)+' km');
+  if(f.province)parts.push('en '+f.province);
+  return parts.join(' · ');
+}
+function openCreateAlert(){
+  if(!me){openAuth('login');toast('Inicia sesión para crear alertas','err');return}
+  const name=alertNameFromFilters(filters);
+  showModal(`<h2>🔔 Crear alerta</h2><p class="mp">Te enviaremos un email cuando se publique un coche que encaje con tu búsqueda actual.</p>
+    <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:14px;font-size:14px"><b>Tu búsqueda:</b><br>${name}</div>
+    <div class="form-row"><label>Nombre de la alerta (opcional)</label><input id="alName" placeholder="${name}"></div>
+    <button class="btn btn-accent btn-block" onclick="doCreateAlert()">Activar alerta</button>`);
+}
+async function doCreateAlert(){
+  try{ await API('/alerts',{method:'POST',body:{name:document.getElementById('alName').value,query:filters}});
+    closeModal();toast('Alerta creada. Te avisaremos por email 🔔','ok');
+  }catch(e){toast(e.message,'err')}
+}
+async function openMyAlerts(){
+  if(!me){openAuth('login');return}
+  closeMenu();
+  const {alerts}=await API('/alerts');
+  showModal(`<h2>🔔 Mis alertas</h2><p class="mp">Recibes un email cuando se publica un coche que encaja.</p>
+    ${alerts.length?alerts.map(a=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+      <div style="font-size:14px"><b>${a.name}</b><br><span style="color:var(--muted);font-size:12px">${a.notified?a.notified+' aviso'+(a.notified!==1?'s':'')+' enviado'+(a.notified!==1?'s':''):'Sin avisos aún'}</span></div>
+      <button class="btn btn-danger btn-sm" onclick="delAlert(${a.id})">Borrar</button></div>`).join('')
+    :`<div style="text-align:center;padding:20px;color:var(--muted)">No tienes alertas.<br>Créalas desde una búsqueda con el botón <b>🔔 Crear alerta</b>.</div>
+     <button class="btn btn-primary btn-block" onclick="closeModal();go('results')">Ir a buscar coches</button>`}`,true);
+}
+async function delAlert(id){
+  try{ await API('/alerts/'+id,{method:'DELETE'});toast('Alerta borrada');openMyAlerts(); }
+  catch(e){toast(e.message,'err')}
+}
 
 /* ---------- RECUPERAR CONTRASEÑA ---------- */
 function openForgot(){

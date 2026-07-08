@@ -81,6 +81,22 @@ function rateLimited(ip, key, max = 20, windowMs = 10 * 60e3) {
 }
 setInterval(() => { const now = Date.now(); for (const [k, v] of rl) if (now > v.reset) rl.delete(k); }, 60e3).unref();
 
+/* ---------- Etiqueta de precio (comparado con anuncios similares) ---------- */
+function priceLabelFor(c) {
+  try {
+    let cmp = db.prepare("SELECT AVG(price) a, COUNT(*) n FROM cars WHERE status='active' AND id<>? AND brand=? AND model=? AND year BETWEEN ? AND ?")
+      .get(c.id, c.brand, c.model, c.year - 2, c.year + 2);
+    if (!cmp || cmp.n < 3) {
+      cmp = db.prepare("SELECT AVG(price) a, COUNT(*) n FROM cars WHERE status='active' AND id<>? AND body=? AND fuel=? AND year BETWEEN ? AND ?")
+        .get(c.id, c.body, c.fuel, c.year - 2, c.year + 2);
+    }
+    if (!cmp || cmp.n < 3 || !cmp.a) return null;
+    if (c.price <= cmp.a * 0.92) return 'good';
+    if (c.price <= cmp.a * 1.05) return 'fair';
+    return null;
+  } catch (e) { return null; }
+}
+
 /* ---------- Helpers de coche ---------- */
 function carOut(c) {
   const owner = db.prepare('SELECT id,name,type,city,phone FROM users WHERE id=?').get(c.owner_id) || {};
@@ -91,7 +107,7 @@ function carOut(c) {
     extras: JSON.parse(c.extras || '[]'), photos: JSON.parse(c.photos || '[]'),
     warranty: !!c.warranty, certified: !!c.certified, noAccidents: !!c.no_accidents,
     sellerType: c.seller_type, desc: c.descr, featured: !!c.featured, status: c.status,
-    views: c.views, created: c.created,
+    views: c.views, created: c.created, priceLabel: priceLabelFor(c),
     owner: { id: owner.id, name: owner.name, type: owner.type, city: owner.city, phone: owner.phone }
   };
 }
@@ -202,6 +218,50 @@ function queryCars(q) {
   };
   rows.sort(by[sort] || by.relevance);
   return rows;
+}
+
+/* ---------- Alertas: nombre automático y comprobación de coincidencia ---------- */
+function alertName(q) {
+  const parts = [];
+  if (q.brand) parts.push(q.brand + (q.model ? ' ' + q.model : ''));
+  else if (q.q) parts.push('"' + q.q + '"');
+  else parts.push('Cualquier coche');
+  if (q.priceMax) parts.push('hasta ' + (+q.priceMax).toLocaleString('es-ES') + ' €');
+  if (q.yearMin) parts.push('desde ' + q.yearMin);
+  if (q.kmMax) parts.push('máx ' + (+q.kmMax).toLocaleString('es-ES') + ' km');
+  if (q.province) parts.push('en ' + q.province);
+  return parts.join(' · ');
+}
+function carMatchesAlert(q, c) {
+  if (q.brand && q.brand !== c.brand) return false;
+  if (q.model && q.model !== c.model) return false;
+  if (q.province && q.province !== c.province) return false;
+  if (q.priceMin && c.price < +q.priceMin) return false;
+  if (q.priceMax && c.price > +q.priceMax) return false;
+  if (q.yearMin && c.year < +q.yearMin) return false;
+  if (q.yearMax && c.year > +q.yearMax) return false;
+  if (q.kmMax && c.km > +q.kmMax) return false;
+  if (q.fuels && q.fuels.length && !q.fuels.includes(c.fuel)) return false;
+  if (q.gears && q.gears.length && !q.gears.includes(c.gear)) return false;
+  if (q.bodies && q.bodies.length && !q.bodies.includes(c.body)) return false;
+  if (q.q && !((c.brand + ' ' + c.model).toLowerCase().includes(String(q.q).toLowerCase()))) return false;
+  return true;
+}
+async function notifyAlerts(car) {
+  const rows = db.prepare('SELECT a.*, u.email uemail, u.name uname FROM alerts a JOIN users u ON u.id=a.user_id WHERE u.banned=0').all();
+  for (const a of rows) {
+    if (a.user_id === car.owner_id) continue;
+    let q; try { q = JSON.parse(a.query); } catch { continue; }
+    if (!carMatchesAlert(q, car)) continue;
+    db.prepare('UPDATE alerts SET notified=notified+1 WHERE id=?').run(a.id);
+    await sendMail(a.uemail, `🔔 Nuevo: ${car.brand} ${car.model} ${car.year} — ${car.price.toLocaleString('es-ES')} €`,
+      mailWrap('Tu alerta tiene un resultado nuevo',
+        `<p>Hola ${esc(a.uname)}, se acaba de publicar un coche que encaja con tu alerta <b>"${esc(a.name)}"</b>:</p>
+         <p style="font-size:17px"><b>${esc(car.brand)} ${esc(car.model)} ${car.year}</b> · ${car.km.toLocaleString('es-ES')} km · ${esc(car.fuel)} · ${esc(car.province || '')}<br>
+         <span style="color:#e85d04;font-size:22px;font-weight:800">${car.price.toLocaleString('es-ES')} €</span></p>
+         <p><a href="${BASE_URL}/#car-${car.id}" style="background:#e85d04;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700">Ver anuncio</a></p>
+         <p style="color:#8a97a5;font-size:12px">Puedes borrar tus alertas desde tu panel en MercaCoches.</p>`));
+  }
 }
 
 /* ================================================================
@@ -316,7 +376,9 @@ async function api(req, res, url) {
     const carId = info.lastInsertRowid;
     const urls = savePhotos(carId, b.photos || []);
     db.prepare('UPDATE cars SET photos=? WHERE id=?').run(JSON.stringify(urls), carId);
-    return send(res, 201, { car: carOut(db.prepare('SELECT * FROM cars WHERE id=?').get(carId)) });
+    const newCar = db.prepare('SELECT * FROM cars WHERE id=?').get(carId);
+    notifyAlerts(newCar).catch(e => console.error('alerts:', e.message));
+    return send(res, 201, { car: carOut(newCar) });
   }
   let m;
   if ((m = p.match(/^\/api\/cars\/(\d+)$/))) {
@@ -358,6 +420,31 @@ async function api(req, res, url) {
     const u = auth(req); if (!u) return send(res, 401, { error: 'No autenticado' });
     const rows = db.prepare('SELECT * FROM cars WHERE owner_id=? ORDER BY created DESC').all(u.id);
     return send(res, 200, { cars: rows.map(carOut) });
+  }
+
+  // ----- ALERTS (búsquedas guardadas con aviso por email) -----
+  if (p === '/api/alerts' && method === 'GET') {
+    const u = auth(req); if (!u) return send(res, 401, { error: 'No autenticado' });
+    const rows = db.prepare('SELECT * FROM alerts WHERE user_id=? ORDER BY created DESC').all(u.id);
+    return send(res, 200, { alerts: rows.map(a => ({ id: a.id, name: a.name, query: JSON.parse(a.query), created: a.created, notified: a.notified })) });
+  }
+  if (p === '/api/alerts' && method === 'POST') {
+    const u = auth(req); if (!u) return send(res, 401, { error: 'Inicia sesión para crear alertas' });
+    const n = db.prepare('SELECT COUNT(*) c FROM alerts WHERE user_id=?').get(u.id).c;
+    if (n >= 10) return send(res, 400, { error: 'Máximo 10 alertas. Borra alguna para crear otra.' });
+    const b = await readBody(req);
+    const q2 = b.query || {};
+    const clean = {};
+    ['brand','model','province','q','priceMin','priceMax','yearMin','yearMax','kmMax'].forEach(k => { if (q2[k]) clean[k] = String(q2[k]); });
+    ['fuels','gears','bodies'].forEach(k => { if (Array.isArray(q2[k]) && q2[k].length) clean[k] = q2[k].map(String); });
+    const name = (b.name || '').trim() || alertName(clean);
+    db.prepare('INSERT INTO alerts(user_id,name,query,created) VALUES(?,?,?,?)').run(u.id, name.slice(0, 80), JSON.stringify(clean), Date.now());
+    return send(res, 201, { ok: true });
+  }
+  if ((m = p.match(/^\/api\/alerts\/(\d+)$/)) && method === 'DELETE') {
+    const u = auth(req); if (!u) return send(res, 401, { error: 'No autenticado' });
+    db.prepare('DELETE FROM alerts WHERE id=? AND user_id=?').run(+m[1], u.id);
+    return send(res, 200, { ok: true });
   }
 
   // ----- FAVORITES -----
