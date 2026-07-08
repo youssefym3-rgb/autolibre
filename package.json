@@ -1,7 +1,7 @@
 {
   "name": "autolibre",
-  "version": "1.0.0",
-  "description": "AutoLibre - Portal de compraventa de coches. Publicar es gratis, precio al contado.",
+  "version": "2.0.0",
+  "description": "MercaCoches - Portal de compraventa de coches. Publicar es gratis.",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {

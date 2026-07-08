@@ -40,6 +40,29 @@ CREATE TABLE IF NOT EXISTS messages(
 );
 `);
 
+/* ---- Migraciones (columnas nuevas sobre bases existentes) ---- */
+function addCol(table, colDef) {
+  try { db.exec(`ALTER TABLE ${table} ADD COLUMN ${colDef}`); } catch (e) { /* ya existe */ }
+}
+addCol('users', "role TEXT NOT NULL DEFAULT 'user'");        // 'user' | 'admin'
+addCol('users', 'verified INTEGER NOT NULL DEFAULT 0');      // email verificado
+addCol('users', 'banned INTEGER NOT NULL DEFAULT 0');        // bloqueado por admin
+
+/* Índices para rendimiento con muchos anuncios */
+db.exec(`
+CREATE INDEX IF NOT EXISTS idx_cars_status ON cars(status);
+CREATE INDEX IF NOT EXISTS idx_cars_owner ON cars(owner_id);
+CREATE INDEX IF NOT EXISTS idx_cars_brand ON cars(brand);
+CREATE INDEX IF NOT EXISTS idx_msgs_thread ON messages(thread_id);
+`);
+
+/* El email indicado en ADMIN_EMAIL se convierte en administrador al arrancar */
+function promoteAdmin() {
+  const adminEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+  if (!adminEmail) return;
+  try { db.prepare("UPDATE users SET role='admin' WHERE email=?").run(adminEmail); } catch (e) {}
+}
+
 function hashPassword(pass, salt) {
   salt = salt || randomBytes(16).toString('hex');
   const hash = scryptSync(pass, salt, 32).toString('hex');
@@ -53,7 +76,7 @@ function verifyPassword(pass, salt, hash) {
 
 function seedIfEmpty() {
   const n = db.prepare('SELECT COUNT(*) c FROM users').get().c;
-  if (n > 0) return;
+  if (n > 0) { promoteAdmin(); return; }
   const now = Date.now();
   const envFor = (fuel, year) => {
     if (fuel === 'Eléctrico' || fuel === 'Híbrido enchufable') return '0';
@@ -107,6 +130,7 @@ function seedIfEmpty() {
       s[12], 'active', Math.floor(Math.random()*400)+40, now - i*86400000*3);
   });
   console.log('Base de datos inicializada con', sample.length, 'coches de ejemplo.');
+  promoteAdmin();
 }
 
-module.exports = { db, hashPassword, verifyPassword, seedIfEmpty };
+module.exports = { db, hashPassword, verifyPassword, seedIfEmpty, promoteAdmin };
