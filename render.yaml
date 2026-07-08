@@ -1,19 +1,13 @@
-# Configuración de despliegue de AutoLibre en Render (plan de pago con disco permanente)
+# Configuración de despliegue de AutoLibre en Render (plan gratuito)
 services:
   - type: web
     name: autolibre
     runtime: node
-    plan: starter            # plan de pago (~7 $/mes): no se duerme
-    buildCommand: ""         # la app no usa librerías externas: no hay que instalar nada
+    plan: free
+    buildCommand: npm install
     startCommand: node server.js
     envVars:
       - key: NODE_VERSION
         value: "22"
-      - key: AUTOLIBRE_DATA
-        value: /var/data     # carpeta en el disco permanente
       - key: AUTOLIBRE_SECRET
-        generateValue: true  # clave de seguridad generada automáticamente
-    disk:
-      name: autolibre-datos
-      mountPath: /var/data   # aquí se guardan la base de datos y las fotos, para siempre
-      sizeGB: 1
+        generateValue: true
