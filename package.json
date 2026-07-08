@@ -1,0 +1,13 @@
+{
+  "name": "autolibre",
+  "version": "1.0.0",
+  "description": "AutoLibre - Portal de compraventa de coches. Publicar es gratis, precio al contado.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoLibre · Publica tus coches gratis, sin comisiones</title>
+<style>
+:root{
+  --brand:#0d6efd;--brand-dark:#0a58ca;--accent:#16c784;--accent-dark:#0fa968;
+  --ink:#111827;--muted:#6b7280;--line:#e5e7eb;--bg:#f4f6fb;--card:#fff;
+  --warn:#f59e0b;--danger:#ef4444;--radius:14px;--shadow:0 4px 18px rgba(17,24,39,.08);
+  --shadow-lg:0 12px 40px rgba(17,24,39,.16);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+button{font-family:inherit;cursor:pointer;border:0;background:none}
+input,select,textarea{font-family:inherit;font-size:15px}
+.container{max-width:1200px;margin:0 auto;padding:0 20px}
+.hidden{display:none!important}
+
+/* ---------- BUTTONS ---------- */
+.btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;padding:11px 20px;border-radius:10px;font-weight:600;font-size:15px;transition:.15s;white-space:nowrap}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:hover{background:var(--brand-dark)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-accent:hover{background:var(--accent-dark)}
+.btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn-ghost:hover{border-color:var(--brand);color:var(--brand)}
+.btn-danger{background:#fee2e2;color:var(--danger)}
+.btn-danger:hover{background:#fecaca}
+.btn-lg{padding:14px 28px;font-size:16px}
+.btn-sm{padding:7px 13px;font-size:13px}
+.btn-block{width:100%}
+
+/* ---------- HEADER ---------- */
+header.top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100}
+.nav{display:flex;align-items:center;gap:22px;height:64px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:22px;letter-spacing:-.5px}
+.logo .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--accent));display:grid;place-items:center;color:#fff;font-size:18px}
+.logo b{color:var(--brand)}
+.nav-links{display:flex;gap:20px;margin-left:8px}
+.nav-links a{color:var(--muted);font-weight:600;font-size:15px;padding:6px 0;border-bottom:2px solid transparent}
+.nav-links a:hover{color:var(--ink)}
+.nav-spacer{flex:1}
+.nav-right{display:flex;align-items:center;gap:12px}
+.user-chip{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;padding:6px 12px;border-radius:30px;background:var(--bg);cursor:pointer}
+.user-chip .av{width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700}
+.menu-toggle{display:none;font-size:24px}
+.dropdown{position:absolute;right:20px;top:60px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lg);min-width:210px;padding:8px;z-index:200}
+.dropdown a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-weight:600;font-size:14px}
+.dropdown a:hover{background:var(--bg)}
+.dropdown hr{border:0;border-top:1px solid var(--line);margin:6px 0}
+
+/* ---------- HERO ---------- */
+.hero{background:linear-gradient(135deg,#0d6efd 0%,#0a3d91 60%,#083061 100%);color:#fff;padding:56px 0 120px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;right:-120px;top:-80px;width:420px;height:420px;background:radial-gradient(circle,rgba(22,199,132,.35),transparent 65%)}
+.hero h1{font-size:44px;line-height:1.1;margin:0 0 14px;font-weight:800;letter-spacing:-1px;max-width:720px}
+.hero p.sub{font-size:19px;opacity:.92;max-width:620px;margin:0 0 26px}
+.badge-free{display:inline-flex;align-items:center;gap:8px;background:rgba(22,199,132,.2);border:1px solid rgba(22,199,132,.5);color:#c6f6e2;padding:7px 15px;border-radius:30px;font-weight:700;font-size:14px;margin-bottom:20px}
+.hero-stats{display:flex;gap:36px;margin-top:34px;flex-wrap:wrap}
+.hero-stats .s b{font-size:28px;font-weight:800;display:block}
+.hero-stats .s span{opacity:.8;font-size:14px}
+
+/* ---------- SEARCH BOX ---------- */
+.searchbox{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:22px;margin:-80px auto 40px;position:relative;z-index:10;max-width:1000px}
+.searchbox h3{margin:0 0 16px;font-size:17px;color:var(--ink)}
+.search-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.field select,.field input{padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);width:100%}
+.field select:focus,.field input:focus{outline:2px solid var(--brand);border-color:var(--brand)}
+.search-actions{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+.search-actions .quick{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:7px 13px;background:var(--bg);border-radius:30px;font-size:13px;font-weight:600;color:var(--muted)}
+.chip:hover{background:#e6ecff;color:var(--brand)}
+
+/* ---------- SECTIONS ---------- */
+section.block{padding:20px 0 50px}
+.section-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:22px}
+.section-head h2{font-size:28px;margin:0;font-weight:800;letter-spacing:-.5px}
+.section-head p{color:var(--muted);margin:4px 0 0}
+.section-head a.more{color:var(--brand);font-weight:700;font-size:15px}
+
+/* ---------- CARDS ---------- */
+.grid-cars{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.car-card{background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);transition:.18s;cursor:pointer;position:relative;display:flex;flex-direction:column}
+.car-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.car-photo{aspect-ratio:16/10;position:relative;overflow:hidden;background:#e9edf5}
+.car-photo .ph{width:100%;height:100%;object-fit:cover;display:block}
+.car-photo .placeholder{width:100%;height:100%;display:grid;place-items:center;font-size:44px;color:#c3ccdb;background:repeating-linear-gradient(45deg,#eef1f7,#eef1f7 12px,#e6eaf2 12px,#e6eaf2 24px)}
+.tag{position:absolute;top:10px;left:10px;background:rgba(17,24,39,.82);color:#fff;font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.tag.pro{background:var(--accent)}
+.tag.new{background:var(--warn);top:10px;left:auto;right:10px}
+.fav-btn{position:absolute;bottom:10px;right:10px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.fav-btn.on{color:var(--danger)}
+.car-body{padding:14px 16px 16px;flex:1;display:flex;flex-direction:column}
+.car-title{font-weight:700;font-size:16px;margin:0 0 2px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.car-sub{color:var(--muted);font-size:13px;margin:0 0 10px}
+.car-specs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.spec{font-size:12px;background:var(--bg);color:var(--muted);padding:4px 9px;border-radius:7px;font-weight:600}
+.car-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center}
+.price{font-size:21px;font-weight:800;color:var(--ink)}
+.price small{font-size:12px;color:var(--muted);font-weight:600}
+.seller-mini{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
+
+/* ---------- VALUE PROP ---------- */
+.value{background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:20px;padding:44px;color:#fff;display:grid;grid-template-columns:1.3fr 1fr;gap:36px;align-items:center;margin:20px 0 10px}
+.value h2{font-size:30px;margin:0 0 12px;font-weight:800}
+.value p{opacity:.85;font-size:16px;margin:0 0 20px}
+.value-features{display:flex;flex-direction:column;gap:14px}
+.vf{display:flex;gap:12px;align-items:start}
+.vf .ic{width:38px;height:38px;border-radius:10px;background:rgba(22,199,132,.18);color:var(--accent);display:grid;place-items:center;font-size:18px;flex-shrink:0}
+.vf b{display:block;font-size:15px}
+.vf span{opacity:.75;font-size:13px}
+.cost-compare{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:24px}
+.cost-compare .row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+.cost-compare .row:last-child{border:0}
+.cost-compare .them{color:#fca5a5;font-weight:700}
+.cost-compare .us{color:var(--accent);font-weight:800}
+
+/* ---------- BRANDS STRIP ---------- */
+.brands-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.brand-pill{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 10px;text-align:center;font-weight:700;cursor:pointer;transition:.15s;color:var(--muted)}
+.brand-pill:hover{border-color:var(--brand);color:var(--brand);transform:translateY(-2px)}
+.brand-pill b{display:block;font-size:16px;color:var(--ink)}
+.brand-pill span{font-size:12px}
+
+/* ---------- RESULTS PAGE ---------- */
+.results-layout{display:grid;grid-template-columns:280px 1fr;gap:26px;align-items:start;padding:26px 0 60px}
+.filters{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;position:sticky;top:80px}
+.filters h4{margin:0 0 4px;font-size:17px}
+.filters .clear{font-size:13px;color:var(--brand);font-weight:600;cursor:pointer}
+.filter-group{padding:16px 0;border-bottom:1px solid var(--line)}
+.filter-group:last-child{border:0}
+.filter-group>label{font-size:13px;font-weight:700;display:block;margin-bottom:9px}
+.filter-group select,.filter-group input{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
+.range-row{display:flex;gap:8px}
+.checks{display:flex;flex-direction:column;gap:8px;max-height:170px;overflow:auto}
+.checks label{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;cursor:pointer}
+.env-tag{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:5px;color:#fff;font-size:11px;font-weight:800}
+.results-main .results-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+.results-top .count{font-weight:700;font-size:18px}
+.results-top .count span{color:var(--muted);font-weight:500;font-size:14px}
+.sort-wrap{display:flex;align-items:center;gap:10px}
+.sort-wrap select{padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:#fff}
+.grid-results{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.empty-state{text-align:center;padding:70px 20px;color:var(--muted)}
+.empty-state .em{font-size:56px;margin-bottom:10px}
+
+/* ---------- DETAIL PAGE ---------- */
+.detail-layout{display:grid;grid-template-columns:1.6fr 1fr;gap:30px;align-items:start;padding:26px 0 60px}
+.gallery .main-img{aspect-ratio:16/10;border-radius:var(--radius);overflow:hidden;background:#e9edf5;margin-bottom:12px}
+.gallery .main-img .placeholder{width:100%;height:100%;display:grid;place-items:center;font-size:90px;color:#c3ccdb;background:repeating-linear-gradient(45deg,#eef1f7,#eef1f7 20px,#e6eaf2 20px,#e6eaf2 40px)}
+.thumbs{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.thumbs .t{aspect-ratio:16/11;border-radius:9px;overflow:hidden;background:#e9edf5;cursor:pointer;border:2px solid transparent}
+.thumbs .t.active{border-color:var(--brand)}
+.thumbs .t .placeholder{width:100%;height:100%;display:grid;place-items:center;color:#c3ccdb;background:repeating-linear-gradient(45deg,#eef1f7,#eef1f7 8px,#e6eaf2 8px,#e6eaf2 16px)}
+.detail-desc{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;margin-top:24px}
+.detail-desc h3{margin:0 0 14px}
+.specs-table{display:grid;grid-template-columns:1fr 1fr;gap:0 30px;margin-top:6px}
+.specs-table .st{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
+.specs-table .st span{color:var(--muted)}
+.specs-table .st b{font-weight:700}
+.side-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;position:sticky;top:80px}
+.side-card .big-price{font-size:34px;font-weight:800;margin:0}
+.side-card .fin{color:var(--muted);font-size:14px;margin:4px 0 18px}
+.seller-box{border:1px solid var(--line);border-radius:12px;padding:16px;margin:18px 0}
+.seller-box .sname{display:flex;align-items:center;gap:10px;font-weight:700}
+.seller-box .sav{width:42px;height:42px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700}
+.seller-box .stype{font-size:13px;color:var(--muted);margin-top:2px}
+.detail-crumbs{padding:16px 0 0;color:var(--muted);font-size:14px}
+.detail-crumbs a:hover{color:var(--brand)}
+
+/* ---------- FORMS / MODALS ---------- */
+.overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);backdrop-filter:blur(3px);z-index:500;display:grid;place-items:center;padding:20px}
+.modal{background:#fff;border-radius:18px;box-shadow:var(--shadow-lg);width:100%;max-width:440px;padding:30px;position:relative;max-height:92vh;overflow:auto}
+.modal.wide{max-width:820px}
+.modal .close-x{position:absolute;top:16px;right:16px;font-size:24px;color:var(--muted);width:34px;height:34px;border-radius:50%}
+.modal .close-x:hover{background:var(--bg)}
+.modal h2{margin:0 0 6px;font-size:24px}
+.modal p.mp{color:var(--muted);margin:0 0 22px}
+.form-row{display:flex;flex-direction:column;gap:6px;margin-bottom:15px}
+.form-row label{font-weight:700;font-size:13px}
+.form-row input,.form-row select,.form-row textarea{padding:11px 13px;border:1px solid var(--line);border-radius:9px;width:100%}
+.form-row textarea{resize:vertical;min-height:90px}
+.form-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tabs{display:flex;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:20px}
+.tabs button{flex:1;padding:10px;border-radius:8px;font-weight:700;color:var(--muted)}
+.tabs button.active{background:#fff;color:var(--brand);box-shadow:var(--shadow)}
+.type-pick{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.type-opt{border:2px solid var(--line);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:.15s}
+.type-opt:hover{border-color:var(--brand)}
+.type-opt.sel{border-color:var(--brand);background:#eff5ff}
+.type-opt .em{font-size:30px}
+.type-opt b{display:block;margin-top:6px}
+.type-opt span{font-size:12px;color:var(--muted)}
+.err{color:var(--danger);font-size:13px;font-weight:600;margin-top:-6px;margin-bottom:10px}
+
+/* ---------- PUBLISH WIZARD ---------- */
+.wizard{max-width:820px;margin:0 auto;padding:30px 0 60px}
+.wiz-steps{display:flex;justify-content:space-between;margin-bottom:30px;position:relative}
+.wiz-steps:before{content:"";position:absolute;top:17px;left:6%;right:6%;height:2px;background:var(--line);z-index:0}
+.wstep{display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;z-index:1;flex:1}
+.wstep .n{width:36px;height:36px;border-radius:50%;background:#fff;border:2px solid var(--line);display:grid;place-items:center;font-weight:700;color:var(--muted)}
+.wstep.active .n{background:var(--brand);border-color:var(--brand);color:#fff}
+.wstep.done .n{background:var(--accent);border-color:var(--accent);color:#fff}
+.wstep span{font-size:13px;font-weight:600;color:var(--muted)}
+.wstep.active span{color:var(--ink)}
+.wiz-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:30px}
+.wiz-card h3{margin:0 0 4px;font-size:22px}
+.wiz-card p.wh{color:var(--muted);margin:0 0 24px}
+.photo-drop{border:2px dashed var(--line);border-radius:14px;padding:34px;text-align:center;cursor:pointer;transition:.15s}
+.photo-drop:hover{border-color:var(--brand);background:#f8faff}
+.photo-drop .em{font-size:40px}
+.photo-preview{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.photo-preview .pp{aspect-ratio:16/11;border-radius:10px;overflow:hidden;position:relative;background:#e9edf5}
+.photo-preview .pp img{width:100%;height:100%;object-fit:cover}
+.photo-preview .pp .rm{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);color:#fff;width:22px;height:22px;border-radius:50%;font-size:14px}
+.wiz-nav{display:flex;justify-content:space-between;margin-top:26px}
+.plan-note{background:#eafaf3;border:1px solid #b6ecd4;border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:center;margin-bottom:20px}
+.plan-note .em{font-size:24px}
+.plan-note b{color:var(--accent-dark)}
+
+/* ---------- DASHBOARD ---------- */
+.dash-layout{display:grid;grid-template-columns:230px 1fr;gap:26px;padding:26px 0 60px;align-items:start}
+.dash-side{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+.dash-side a{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:9px;font-weight:600;color:var(--muted);font-size:14px}
+.dash-side a.active,.dash-side a:hover{background:var(--bg);color:var(--brand)}
+.dash-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+.stat-card .lab{color:var(--muted);font-size:13px;font-weight:600}
+.stat-card .val{font-size:28px;font-weight:800;margin-top:4px}
+.stat-card .val small{font-size:13px;color:var(--accent);font-weight:700}
+.mylist{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.mylist .row{display:flex;gap:16px;padding:16px;border-bottom:1px solid var(--line);align-items:center}
+.mylist .row:last-child{border:0}
+.mylist .thumb{width:110px;aspect-ratio:16/11;border-radius:9px;overflow:hidden;background:#e9edf5;flex-shrink:0}
+.mylist .thumb .placeholder{width:100%;height:100%;display:grid;place-items:center;color:#c3ccdb;background:repeating-linear-gradient(45deg,#eef1f7,#eef1f7 10px,#e6eaf2 10px,#e6eaf2 20px)}
+.mylist .info{flex:1}
+.mylist .info h4{margin:0 0 3px;font-size:16px}
+.mylist .info .meta{color:var(--muted);font-size:13px}
+.mylist .info .st-badges{display:flex;gap:6px;margin-top:6px}
+.stbadge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--bg);color:var(--muted)}
+.stbadge.active{background:#eafaf3;color:var(--accent-dark)}
+.stbadge.views{background:#eff5ff;color:var(--brand)}
+.mylist .acts{display:flex;flex-direction:column;gap:8px}
+
+/* ---------- PRICING ---------- */
+.pricing{padding:40px 0 60px}
+.pricing-head{text-align:center;margin-bottom:40px}
+.pricing-head h2{font-size:34px;margin:0 0 10px;font-weight:800}
+.pricing-head p{color:var(--muted);font-size:17px;max-width:560px;margin:0 auto}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;align-items:start}
+.plan{background:#fff;border-radius:18px;box-shadow:var(--shadow);padding:30px;border:2px solid transparent;position:relative}
+.plan.featured{border-color:var(--brand);transform:scale(1.03)}
+.plan .pop{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--brand);color:#fff;font-size:12px;font-weight:700;padding:5px 16px;border-radius:20px}
+.plan h3{margin:0 0 4px;font-size:22px}
+.plan .pdesc{color:var(--muted);font-size:14px;min-height:40px}
+.plan .amount{font-size:40px;font-weight:800;margin:12px 0 2px}
+.plan .amount small{font-size:16px;color:var(--muted);font-weight:600}
+.plan .period{color:var(--muted);font-size:13px;margin-bottom:20px}
+.plan ul{list-style:none;padding:0;margin:0 0 22px}
+.plan ul li{padding:8px 0;font-size:14px;display:flex;gap:10px;align-items:start}
+.plan ul li .ck{color:var(--accent);font-weight:800}
+.plan ul li.off{color:#c3ccdb}
+.launch-banner{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;border-radius:16px;padding:24px 30px;text-align:center;margin-bottom:34px}
+.launch-banner b{font-size:20px}
+
+/* ---------- MESSAGES ---------- */
+.msg-layout{display:grid;grid-template-columns:320px 1fr;gap:0;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;min-height:520px;margin:26px 0 60px}
+.msg-list{border-right:1px solid var(--line);overflow:auto}
+.msg-item{padding:16px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;gap:12px}
+.msg-item:hover,.msg-item.active{background:var(--bg)}
+.msg-item .av{width:44px;height:44px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;flex-shrink:0}
+.msg-item .mi{flex:1;min-width:0}
+.msg-item .mi .top{display:flex;justify-content:space-between}
+.msg-item .mi b{font-size:14px}
+.msg-item .mi .time{font-size:12px;color:var(--muted)}
+.msg-item .mi .prev{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg-thread{display:flex;flex-direction:column}
+.msg-thread .th-head{padding:16px 20px;border-bottom:1px solid var(--line);font-weight:700}
+.msg-thread .th-body{flex:1;padding:20px;overflow:auto;display:flex;flex-direction:column;gap:12px;background:var(--bg)}
+.bubble{max-width:70%;padding:11px 15px;border-radius:14px;font-size:14px}
+.bubble.in{background:#fff;box-shadow:var(--shadow);align-self:flex-start;border-bottom-left-radius:4px}
+.bubble.out{background:var(--brand);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.msg-thread .th-input{display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--line)}
+.msg-thread .th-input input{flex:1;padding:11px 14px;border:1px solid var(--line);border-radius:24px}
+
+/* ---------- FOOTER ---------- */
+footer.foot{background:#0f172a;color:#cbd5e1;padding:48px 0 24px;margin-top:20px}
+.foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:30px;margin-bottom:34px}
+.foot-grid .logo{color:#fff}
+.foot-grid p{font-size:14px;opacity:.7;max-width:280px}
+.foot-col h5{color:#fff;margin:0 0 14px;font-size:15px}
+.foot-col a{display:block;padding:5px 0;font-size:14px;opacity:.75}
+.foot-col a:hover{opacity:1;color:#fff}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:20px;display:flex;justify-content:space-between;font-size:13px;opacity:.6;flex-wrap:wrap;gap:10px}
+
+/* ---------- TOAST ---------- */
+.toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:900;display:flex;flex-direction:column;gap:10px;align-items:center}
+.toast{background:#111827;color:#fff;padding:13px 22px;border-radius:30px;font-weight:600;font-size:14px;box-shadow:var(--shadow-lg);animation:pop .25s}
+.toast.ok{background:var(--accent-dark)}
+.toast.err{background:var(--danger)}
+@keyframes pop{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ---------- RESPONSIVE ---------- */
+@media(max-width:960px){
+  .search-grid{grid-template-columns:repeat(2,1fr)}
+  .grid-cars,.grid-results{grid-template-columns:repeat(2,1fr)}
+  .results-layout,.detail-layout,.dash-layout,.msg-layout{grid-template-columns:1fr}
+  .filters,.side-card{position:static}
+  .value{grid-template-columns:1fr}
+  .plans{grid-template-columns:1fr}
+  .plan.featured{transform:none}
+  .foot-grid{grid-template-columns:1fr 1fr}
+  .brands-strip{grid-template-columns:repeat(3,1fr)}
+  .nav-links{display:none}
+  .hero h1{font-size:32px}
+}
+@media(max-width:560px){
+  .search-grid,.grid-cars,.grid-results{grid-template-columns:1fr}
+  .form-two,.type-pick,.dash-stats{grid-template-columns:1fr}
+  .hero-stats{gap:20px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="top">
+  <div class="container nav">
+    <a class="logo" onclick="go('home')">
+      <span class="mark">◈</span>Auto<b>Libre</b>
+    </a>
+    <nav class="nav-links">
+      <a onclick="go('results')">Comprar</a>
+      <a onclick="go('publish')">Vender</a>
+      
+      <a onclick="go('home');setTimeout(()=>document.getElementById('why')?.scrollIntoView({behavior:'smooth'}),50)">Por qué gratis</a>
+    </nav>
+    <div class="nav-spacer"></div>
+    <div class="nav-right" id="navRight"></div>
+  </div>
+  <div id="userMenu" class="dropdown hidden"></div>
+</header>
+
+<main id="app"></main>
+
+<!-- FOOTER -->
+<footer class="foot">
+  <div class="container">
+    <div class="foot-grid">
+      <div>
+        <div class="logo" style="margin-bottom:12px"><span class="mark">◈</span>Auto<b style="color:#4d94ff">Libre</b></div>
+        <p>El portal donde publicar tu coche es <b>gratis</b>. Sin comisiones ni cuotas para empezar. Pensado para particulares y concesionarios que quieren vender sin pagar de más.</p>
+      </div>
+      <div class="foot-col"><h5>Comprar</h5><a onclick="go('results')">Todos los coches</a><a onclick="quickBrand('BMW')">BMW</a><a onclick="quickBrand('Audi')">Audi</a><a onclick="quickBrand('Volkswagen')">Volkswagen</a></div>
+      <div class="foot-col"><h5>Vender</h5><a onclick="go('publish')">Publicar anuncio</a><a onclick="go('dashboard')">Mi panel</a></div>
+      <div class="foot-col"><h5>AutoLibre</h5><a onclick="go('home')">Inicio</a><a onclick="toast('Página de ejemplo')">Sobre nosotros</a><a onclick="toast('Página de ejemplo')">Contacto</a><a onclick="toast('Página de ejemplo')">Ayuda</a></div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 AutoLibre · Prototipo funcional</span>
+      <span>Aviso legal · Privacidad · Cookies</span>
+    </div>
+  </div>
+</footer>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+/* ==========================================================
+   AUTOLIBRE · Cliente conectado a la API real (servidor Node)
+   ========================================================== */
+const BRANDS={
+  'Audi':['A1','A3','A4','A5','A6','Q3','Q5','Q7','e-tron'],
+  'BMW':['Serie 1','Serie 2','Serie 3','Serie 5','X1','X3','X5','i3'],
+  'Mercedes-Benz':['Clase A','Clase B','Clase C','Clase E','GLA','GLC','CLA'],
+  'Volkswagen':['Polo','Golf','Passat','Tiguan','T-Roc','Touran','ID.3'],
+  'Seat':['Ibiza','León','Arona','Ateca','Tarraco'],
+  'Renault':['Clio','Megane','Captur','Kadjar','Arkana','Austral'],
+  'Peugeot':['208','308','2008','3008','5008','508'],
+  'Toyota':['Yaris','Corolla','C-HR','RAV4','Aygo'],
+  'Ford':['Fiesta','Focus','Puma','Kuga','Mustang'],
+  'Tesla':['Model 3','Model Y','Model S'],
+  'Kia':['Ceed','Sportage','Niro','Picanto'],
+  'Hyundai':['i20','i30','Tucson','Kona','Ioniq']
+};
+const FUELS=['Gasolina','Diésel','Híbrido','Híbrido enchufable','Eléctrico','GLP'];
+const GEARS=['Manual','Automático'];
+const BODIES=['Berlina','Compacto','SUV','Familiar','Coupé','Monovolumen','Cabrio','Pick-up'];
+const PROVINCES=['Madrid','Barcelona','Valencia','Sevilla','Málaga','Bilbao','Zaragoza','Alicante','Murcia','Vigo','Granada','A Coruña','Palma','Valladolid'];
+const COLORS=['Blanco','Negro','Gris','Plata','Azul','Rojo','Verde','Marrón','Naranja','Amarillo'];
+const ENV_LABELS=['0','ECO','C','B'];
+const DOORS=[3,4,5];
+const SEATS=[2,4,5,7,9];
+const SELLER_TYPES=[['pro','Profesional / Concesionario'],['private','Particular']];
+const EXTRAS=['Climatizador','Navegador GPS','Cámara trasera','Sensores de parking','Asientos de cuero','Techo solar/panorámico','Bluetooth','Faros LED/Xenón','Control de crucero','Llantas de aleación','Apple CarPlay/Android Auto','Asientos calefactables','Cámara 360°','Portón eléctrico','Head-Up Display'];
+const ENV_COLORS={'0':'#0d6efd','ECO':'#16c784','C':'#f59e0b','B':'#eab308'};
+
+/* ---------- Estado ---------- */
+let me=null;
+let token=localStorage.getItem('al_token')||'';
+let favIds=new Set();
+let filters={};
+let currentDetail=null;
+let pubDraft=null, pubStep=0;
+let activeThread=null;
+
+/* ---------- API ---------- */
+async function API(path,{method='GET',body,auth=true}={}){
+  const headers={};
+  if(body)headers['Content-Type']='application/json';
+  if(auth&&token)headers['Authorization']='Bearer '+token;
+  const r=await fetch('/api'+path,{method,headers,body:body?JSON.stringify(body):undefined});
+  let data={};try{data=await r.json()}catch(e){}
+  if(!r.ok)throw new Error(data.error||('Error '+r.status));
+  return data;
+}
+
+/* ---------- Helpers ---------- */
+function fmt(n){return (n||0).toLocaleString('es-ES')}
+function euro(n){return fmt(n)+' €'}
+function initials(name){return (name||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()}
+function daysAgo(ts){const d=Math.floor((Date.now()-ts)/86400000);return d<=0?'Hoy':d===1?'Ayer':'Hace '+d+' días'}
+function isFav(id){return favIds.has(+id)}
+function toast(msg,type=''){const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;document.getElementById('toasts').appendChild(t);setTimeout(()=>t.remove(),2600);}
+
+/* ---------- Router ---------- */
+async function go(page,scroll=true){
+  closeMenu();
+  const map={home:renderHome,results:renderResults,detail:renderDetail,publish:renderPublish,
+    dashboard:renderDashboard,pricing:renderPricing,favorites:renderFavorites,messages:renderMessages};
+  window.location.hash=page;
+  try{ await (map[page]||renderHome)(); }
+  catch(e){ toast(e.message||'Error','err'); }
+  if(scroll)window.scrollTo({top:0,behavior:'instant'});
+}
+
+/* ---------- Sesión ---------- */
+async function restoreSession(){
+  if(!token)return;
+  try{ const {user}=await API('/auth/me'); me=user; await loadFavs(); }
+  catch(e){ token=''; localStorage.removeItem('al_token'); me=null; }
+}
+async function loadFavs(){
+  if(!me){favIds=new Set();return}
+  try{ const {ids}=await API('/favorites'); favIds=new Set(ids.map(Number)); }catch(e){}
+}
+function renderNav(){
+  const nr=document.getElementById('navRight');
+  if(me){
+    nr.innerHTML=`<button class="btn btn-accent btn-sm" onclick="go('publish')">＋ Publicar gratis</button>
+      <div class="user-chip" onclick="toggleMenu(event)"><span class="av">${initials(me.name)}</span><span>${me.name.split(' ')[0]}</span> ▾</div>`;
+  }else{
+    nr.innerHTML=`<button class="btn btn-ghost btn-sm" onclick="openAuth('login')">Iniciar sesión</button>
+      <button class="btn btn-accent btn-sm" onclick="go('publish')">＋ Publicar gratis</button>`;
+  }
+}
+function toggleMenu(e){
+  e.stopPropagation();
+  const mnu=document.getElementById('userMenu');
+  if(!mnu.classList.contains('hidden')){mnu.classList.add('hidden');return}
+  mnu.innerHTML=`<div style="padding:10px 12px"><b>${me.name}</b><br><span style="font-size:13px;color:var(--muted)">${me.type==='pro'?'Concesionario':'Particular'} · Plan ${me.plan}</span></div><hr>
+    <a onclick="go('dashboard')">▤ Mi panel</a><a onclick="go('publish')">＋ Publicar coche</a>
+    <a onclick="go('favorites')">♥ Favoritos (${favIds.size})</a><a onclick="go('messages')">✉ Mensajes</a>
+    <hr><a onclick="logout()">⏻ Cerrar sesión</a>`;
+  mnu.classList.remove('hidden');
+}
+function closeMenu(){document.getElementById('userMenu')?.classList.add('hidden')}
+document.addEventListener('click',closeMenu);
+
+/* ---------- Tarjeta ---------- */
+function carCard(c){
+  const photo=c.photos&&c.photos.length?`<img class="ph" src="${c.photos[0]}">`:`<div class="placeholder">🚗</div>`;
+  const isNew=(Date.now()-c.created)<7*86400000;
+  return `<div class="car-card" onclick="openDetail(${c.id})">
+    <div class="car-photo">${photo}
+      ${c.featured?'<span class="tag pro">Destacado</span>':''}
+      ${isNew&&!c.featured?'<span class="tag new">Nuevo</span>':''}
+      <button class="fav-btn ${isFav(c.id)?'on':''}" onclick="event.stopPropagation();toggleFav(${c.id})">${isFav(c.id)?'♥':'♡'}</button>
+    </div>
+    <div class="car-body">
+      <h3 class="car-title">${c.brand} ${c.model}</h3>
+      <p class="car-sub">${c.year} · ${c.province}</p>
+      <div class="car-specs">
+        <span class="spec">${fmt(c.km)} km</span><span class="spec">${c.fuel}</span>
+        <span class="spec">${c.gear}</span><span class="spec">${c.power} CV</span>
+      </div>
+      <div class="car-foot">
+        <div class="price">${euro(c.price)}</div>
+        <div class="seller-mini">${c.owner&&c.owner.type==='pro'?'🏢':'👤'} ${c.owner?c.owner.name.split(' ')[0]:''}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- HOME ---------- */
+async function renderHome(){
+  const {cars}=await API('/cars',{auth:false});
+  const featured=cars.filter(c=>c.featured).slice(0,4);
+  const recent=[...cars].sort((a,b)=>b.created-a.created).slice(0,4);
+  document.getElementById('app').innerHTML=`
+  <section class="hero"><div class="container">
+    <span class="badge-free">🎉 Publicar es 100% GRATIS · Sin comisiones</span>
+    <h1>Compra y vende coches sin pagar de más</h1>
+    <p class="sub">El portal donde los concesionarios y particulares publican gratis. Todo lo que necesitas para vender tu coche, sin las cuotas de siempre.</p>
+    <div class="hero-stats">
+      <div class="s"><b>${fmt(cars.length)}</b><span>coches publicados</span></div>
+      <div class="s"><b>0 €</b><span>por publicar</span></div>
+      <div class="s"><b>Contado</b><span>trato directo</span></div>
+    </div>
+  </div></section>
+  <div class="container">
+    <div class="searchbox"><h3>🔍 Encuentra tu coche ideal</h3>
+      <div class="search-grid">
+        <div class="field"><label>Marca</label><select id="hMarca" onchange="fillHModels()"><option value="">Todas</option>${Object.keys(BRANDS).map(b=>`<option>${b}</option>`).join('')}</select></div>
+        <div class="field"><label>Modelo</label><select id="hModelo"><option value="">Todos</option></select></div>
+        <div class="field"><label>Precio hasta</label><select id="hPrecio"><option value="">Sin límite</option><option value="10000">10.000 €</option><option value="20000">20.000 €</option><option value="30000">30.000 €</option><option value="40000">40.000 €</option><option value="60000">60.000 €</option></select></div>
+        <div class="field"><label>Provincia</label><select id="hProv"><option value="">Toda España</option>${PROVINCES.map(p=>`<option>${p}</option>`).join('')}</select></div>
+        <div class="search-actions">
+          <div class="quick">
+            <span class="chip" onclick="quickFuel('Eléctrico')">⚡ Eléctricos</span>
+            <span class="chip" onclick="quickBody('SUV')">🚙 SUV</span>
+            <span class="chip" onclick="quickPrice(15000)">💰 Menos de 15.000 €</span>
+            <span class="chip" onclick="quickFuel('Híbrido')">🍃 Híbridos</span>
+          </div>
+          <button class="btn btn-primary btn-lg" onclick="doHomeSearch()">Buscar coches</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <section class="block">
+      <div class="section-head"><div><h2>Coches destacados</h2><p>Los anuncios más vistos</p></div><a class="more" onclick="go('results')">Ver todos →</a></div>
+      <div class="grid-cars">${featured.map(carCard).join('')||'<p style="color:var(--muted)">Aún no hay destacados.</p>'}</div>
+    </section>
+    <section class="block" id="why">
+      <div class="value">
+        <div><h2>¿Por qué somos gratis?</h2>
+          <p>Los grandes portales cobran a los concesionarios cientos de euros al mes por publicar. Nosotros lo hacemos gratis para que puedas vender más, gastando menos.</p>
+          <div class="value-features">
+            <div class="vf"><span class="ic">✓</span><div><b>Publica sin límite</b><span>Sube todo tu stock sin pagar por anuncio</span></div></div>
+            <div class="vf"><span class="ic">✓</span><div><b>Sin permanencia</b><span>Empieza y para cuando quieras</span></div></div>
+            <div class="vf"><span class="ic">✓</span><div><b>Herramientas pro</b><span>Panel, estadísticas y mensajería incluidos</span></div></div>
+          </div>
+          <button class="btn btn-accent btn-lg" style="margin-top:24px" onclick="go('publish')">Empezar a publicar gratis</button>
+        </div>
+        <div class="cost-compare"><h3 style="margin:0 0 8px">Coste mensual de un concesionario</h3>
+          <div class="row"><span>Portal líder del mercado</span><span class="them">~450 €/mes</span></div>
+          <div class="row"><span>Otro portal conocido</span><span class="them">~380 €/mes</span></div>
+          <div class="row"><span>AutoLibre (ahora)</span><span class="us">0 €</span></div>
+          <p style="opacity:.6;font-size:13px;margin:14px 0 0">*Cifras orientativas del sector.</p>
+        </div>
+      </div>
+    </section>
+    <section class="block">
+      <div class="section-head"><div><h2>Explora por marca</h2></div></div>
+      <div class="brands-strip">${Object.keys(BRANDS).slice(0,6).map(b=>{const n=cars.filter(c=>c.brand===b).length;return `<div class="brand-pill" onclick="quickBrand('${b}')"><b>${b}</b><span>${n} coche${n!==1?'s':''}</span></div>`}).join('')}</div>
+    </section>
+    <section class="block">
+      <div class="section-head"><div><h2>Recién publicados</h2></div><a class="more" onclick="go('results')">Ver todos →</a></div>
+      <div class="grid-cars">${recent.map(carCard).join('')}</div>
+    </section>
+  </div>`;
+  fillHModels();
+}
+function fillHModels(){const b=document.getElementById('hMarca')?.value;const m=document.getElementById('hModelo');if(!m)return;m.innerHTML='<option value="">Todos</option>'+(b&&BRANDS[b]?BRANDS[b].map(x=>`<option>${x}</option>`).join(''):'')}
+function doHomeSearch(){filters={brand:document.getElementById('hMarca').value,model:document.getElementById('hModelo').value,priceMax:document.getElementById('hPrecio').value,province:document.getElementById('hProv').value};go('results')}
+function quickBrand(b){filters={brand:b};go('results')}
+function quickFuel(f){filters={fuels:[f]};go('results')}
+function quickBody(b){filters={bodies:[b]};go('results')}
+function quickPrice(p){filters={priceMax:p};go('results')}
+
+/* ---------- RESULTADOS ---------- */
+function buildQuery(){
+  const p=new URLSearchParams();
+  for(const k in filters){const v=filters[k];if(v==null||v==='')continue;if(Array.isArray(v)){if(v.length)p.set(k,v.join(','))}else p.set(k,v)}
+  return p.toString();
+}
+async function renderResults(){
+  const {cars,total}=await API('/cars?'+buildQuery(),{auth:false});
+  const f=filters;
+  document.getElementById('app').innerHTML=`<div class="container"><div class="results-layout">
+    <aside class="filters">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><h4>Filtros</h4><span class="clear" onclick="clearFilters()">Limpiar</span></div>
+      <div class="filter-group"><label>Buscar</label><input id="fq" placeholder="Marca o modelo…" value="${f.q||''}" oninput="setF('q',this.value)"></div>
+      <div class="filter-group"><label>Marca</label>
+        <select id="fBrand" onchange="setF('brand',this.value);fillFModels()"><option value="">Todas</option>${Object.keys(BRANDS).map(b=>`<option ${f.brand===b?'selected':''}>${b}</option>`).join('')}</select>
+        <label>Modelo</label><select id="fModel" onchange="setF('model',this.value)"><option value="">Todos</option></select></div>
+      <div class="filter-group"><label>Precio (€)</label><div class="range-row"><input type="number" placeholder="Mín" value="${f.priceMin||''}" oninput="setF('priceMin',this.value)"><input type="number" placeholder="Máx" value="${f.priceMax||''}" oninput="setF('priceMax',this.value)"></div></div>
+      <div class="filter-group"><label>Año</label><div class="range-row">
+        <select onchange="setF('yearMin',this.value)"><option value="">Desde</option>${Array.from({length:20},(_,i)=>2026-i).map(y=>`<option ${+f.yearMin===y?'selected':''}>${y}</option>`).join('')}</select>
+        <select onchange="setF('yearMax',this.value)"><option value="">Hasta</option>${Array.from({length:20},(_,i)=>2026-i).map(y=>`<option ${+f.yearMax===y?'selected':''}>${y}</option>`).join('')}</select></div></div>
+      <div class="filter-group"><label>Kilómetros máximos</label><select onchange="setF('kmMax',this.value)"><option value="">Cualquiera</option>${[10000,20000,50000,80000,120000,160000,200000].map(k=>`<option value="${k}" ${+f.kmMax===k?'selected':''}>${fmt(k)} km</option>`).join('')}</select></div>
+      <div class="filter-group"><label>Potencia (CV)</label><div class="range-row"><input type="number" placeholder="Mín" value="${f.powerMin||''}" oninput="setF('powerMin',this.value)"><input type="number" placeholder="Máx" value="${f.powerMax||''}" oninput="setF('powerMax',this.value)"></div></div>
+      <div class="filter-group"><label>Combustible</label><div class="checks">${FUELS.map(x=>`<label><input type="checkbox" ${(f.fuels||[]).includes(x)?'checked':''} onchange="toggleArr('fuels','${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Cambio</label><div class="checks">${GEARS.map(x=>`<label><input type="checkbox" ${(f.gears||[]).includes(x)?'checked':''} onchange="toggleArr('gears','${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Carrocería</label><div class="checks">${BODIES.map(x=>`<label><input type="checkbox" ${(f.bodies||[]).includes(x)?'checked':''} onchange="toggleArr('bodies','${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Distintivo ambiental</label><div class="checks">${ENV_LABELS.map(x=>`<label><input type="checkbox" ${(f.envs||[]).includes(x)?'checked':''} onchange="toggleArr('envs','${x}')"> <span class="env-tag" style="background:${ENV_COLORS[x]}">${x}</span> Etiqueta ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Color</label><div class="checks">${COLORS.map(x=>`<label><input type="checkbox" ${(f.colors||[]).includes(x)?'checked':''} onchange="toggleArr('colors','${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Puertas</label><div class="checks" style="flex-direction:row;flex-wrap:wrap;gap:14px">${DOORS.map(x=>`<label><input type="checkbox" ${(f.doors||[]).includes(String(x))?'checked':''} onchange="toggleArr('doors','${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Plazas</label><div class="checks" style="flex-direction:row;flex-wrap:wrap;gap:14px">${SEATS.map(x=>`<label><input type="checkbox" ${(f.seats||[]).includes(String(x))?'checked':''} onchange="toggleArr('seats','${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Tipo de vendedor</label><div class="checks">${SELLER_TYPES.map(x=>`<label><input type="checkbox" ${(f.sellerTypes||[]).includes(x[0])?'checked':''} onchange="toggleArr('sellerTypes','${x[0]}')"> ${x[1]}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Provincia</label><select onchange="setF('province',this.value)"><option value="">Toda España</option>${PROVINCES.map(p=>`<option ${f.province===p?'selected':''}>${p}</option>`).join('')}</select></div>
+      <div class="filter-group"><label>Equipamiento y extras</label><div class="checks" style="max-height:200px">${EXTRAS.map(x=>`<label><input type="checkbox" ${(f.extras||[]).includes(x)?'checked':''} onchange="toggleArr('extras','${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Otros</label><div class="checks">
+        <label><input type="checkbox" ${f.withPhotos?'checked':''} onchange="toggleBool('withPhotos')"> Solo con fotos</label>
+        <label><input type="checkbox" ${f.certified?'checked':''} onchange="toggleBool('certified')"> Certificado</label>
+        <label><input type="checkbox" ${f.warranty?'checked':''} onchange="toggleBool('warranty')"> Con garantía</label>
+        <label><input type="checkbox" ${f.noAccidents?'checked':''} onchange="toggleBool('noAccidents')"> Sin accidentes</label></div></div>
+    </aside>
+    <div class="results-main">
+      <div class="results-top"><div class="count">${total} coche${total!==1?'s':''} <span>encontrados</span></div>
+        <div class="sort-wrap"><span style="font-size:14px;color:var(--muted)">Ordenar:</span>
+          <select onchange="setF('sort',this.value)">
+            <option value="relevance">Relevancia</option>
+            <option value="price-asc" ${f.sort==='price-asc'?'selected':''}>Precio ↑</option>
+            <option value="price-desc" ${f.sort==='price-desc'?'selected':''}>Precio ↓</option>
+            <option value="km-asc" ${f.sort==='km-asc'?'selected':''}>Menos km</option>
+            <option value="year-desc" ${f.sort==='year-desc'?'selected':''}>Más nuevos</option>
+            <option value="recent" ${f.sort==='recent'?'selected':''}>Más recientes</option>
+          </select></div></div>
+      ${cars.length?`<div class="grid-results">${cars.map(carCard).join('')}</div>`:`<div class="empty-state"><div class="em">🔍</div><h3>No hay coches con estos filtros</h3><button class="btn btn-primary" onclick="clearFilters()">Limpiar filtros</button></div>`}
+    </div>
+  </div></div>`;
+  fillFModels();
+}
+function setF(k,v){if(v===''||v==null)delete filters[k];else filters[k]=v;renderResults()}
+function toggleArr(k,v){filters[k]=filters[k]||[];v=String(v);const i=filters[k].indexOf(v);if(i>=0)filters[k].splice(i,1);else filters[k].push(v);renderResults()}
+function toggleBool(k){if(filters[k])delete filters[k];else filters[k]=true;renderResults()}
+function clearFilters(){filters={};renderResults()}
+function fillFModels(){const b=filters.brand;const m=document.getElementById('fModel');if(!m)return;m.innerHTML='<option value="">Todos</option>'+(b&&BRANDS[b]?BRANDS[b].map(x=>`<option ${filters.model===x?'selected':''}>${x}</option>`).join(''):'')}
+
+/* ---------- DETALLE ---------- */
+function openDetail(id){currentDetail=id;go('detail')}
+async function renderDetail(){
+  const {car:c}=await API('/cars/'+currentDetail,{auth:false});
+  let similar=[];try{const r=await API('/cars?bodies='+encodeURIComponent(c.body),{auth:false});similar=r.cars.filter(x=>x.id!==c.id).slice(0,4);}catch(e){}
+  const u=c.owner||{};
+  const photos=c.photos||[];
+  const mainImg=photos.length?`<img src="${photos[0]}" id="mainImg" style="width:100%;height:100%;object-fit:cover">`:`<div class="placeholder">🚗</div>`;
+  const thumbs=(photos.length?photos:[0,1,2,3,4]).map((p,i)=>photos.length?`<div class="t ${i===0?'active':''}" onclick="swapImg('${p}',this)"><img src="${p}" style="width:100%;height:100%;object-fit:cover"></div>`:`<div class="t"><div class="placeholder">📷</div></div>`).join('');
+  document.getElementById('app').innerHTML=`<div class="container">
+    <div class="detail-crumbs"><a onclick="go('home')">Inicio</a> › <a onclick="quickBrand('${c.brand}')">${c.brand}</a> › ${c.model}</div>
+    <div class="detail-layout">
+      <div>
+        <div class="gallery"><div class="main-img">${mainImg}</div><div class="thumbs">${thumbs}</div></div>
+        <div class="detail-desc">
+          <h3>${c.brand} ${c.model} ${c.year}</h3>
+          <p style="color:var(--muted);margin-top:-6px">Publicado ${daysAgo(c.created)} · ${c.views} visitas · Ref. ${c.id}</p>
+          <div class="specs-table">
+            <div class="st"><span>Año</span><b>${c.year}</b></div>
+            <div class="st"><span>Kilómetros</span><b>${fmt(c.km)} km</b></div>
+            <div class="st"><span>Combustible</span><b>${c.fuel}</b></div>
+            <div class="st"><span>Cambio</span><b>${c.gear}</b></div>
+            <div class="st"><span>Potencia</span><b>${c.power} CV</b></div>
+            <div class="st"><span>Carrocería</span><b>${c.body}</b></div>
+            <div class="st"><span>Puertas</span><b>${c.doors}</b></div>
+            <div class="st"><span>Plazas</span><b>${c.seats}</b></div>
+            <div class="st"><span>Color</span><b>${c.color}</b></div>
+            <div class="st"><span>Ubicación</span><b>${c.province}</b></div>
+            <div class="st"><span>Distintivo ambiental</span><b>${c.env?`<span class="env-tag" style="background:${ENV_COLORS[c.env]}">${c.env}</span> Etiqueta ${c.env}`:'—'}</b></div>
+            <div class="st"><span>Vendedor</span><b>${(c.sellerType||u.type)==='pro'?'Profesional':'Particular'}</b></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+            ${c.noAccidents?'<span class="stbadge active">✓ Sin accidentes</span>':''}
+            ${c.warranty?'<span class="stbadge active">✓ Con garantía</span>':''}
+            ${c.certified?'<span class="stbadge active">✓ Certificado</span>':''}
+          </div>
+          <h3 style="margin-top:26px">Descripción</h3>
+          <p style="color:#374151">${c.desc}</p>
+          ${c.extras&&c.extras.length?`<h3 style="margin-top:26px">Equipamiento y extras</h3><div style="display:flex;gap:8px;flex-wrap:wrap">${c.extras.map(e=>`<span class="spec" style="font-size:13px">✓ ${e}</span>`).join('')}</div>`:''}
+        </div>
+        ${similar.length?`<section class="block" style="padding-top:34px"><div class="section-head"><div><h2 style="font-size:22px">Coches similares</h2></div></div><div class="grid-cars">${similar.map(carCard).join('')}</div></section>`:''}
+      </div>
+      <div><div class="side-card">
+        <p class="big-price">${euro(c.price)}</p>
+        <p class="fin">Precio al contado</p>
+        <button class="btn btn-primary btn-block btn-lg" onclick="contactSeller(${c.id},'${(c.brand+' '+c.model).replace(/'/g,'')}')">✉ Contactar con el vendedor</button>
+        <button class="btn btn-ghost btn-block" style="margin-top:10px" onclick="this.textContent='📞 '+${JSON.stringify(u.phone||'—')};this.disabled=true">📞 Ver teléfono</button>
+        <button class="btn ${isFav(c.id)?'btn-danger':'btn-ghost'} btn-block" style="margin-top:10px" onclick="toggleFav(${c.id})">${isFav(c.id)?'♥ Guardado en favoritos':'♡ Guardar en favoritos'}</button>
+        <div class="seller-box"><div class="sname"><span class="sav">${initials(u.name)}</span><div>${u.name||'Vendedor'}<div class="stype">${u.type==='pro'?'🏢 Concesionario profesional':'👤 Particular'} · ${u.city||''}</div></div></div></div>
+        <p style="font-size:12px;color:var(--muted);text-align:center">Trato directo entre comprador y vendedor. Precio al contado.</p>
+      </div></div>
+    </div></div>`;
+}
+function swapImg(src,el){document.getElementById('mainImg').src=src;document.querySelectorAll('.thumbs .t').forEach(t=>t.classList.remove('active'));el.classList.add('active')}
+
+/* ---------- FAVORITOS ---------- */
+async function toggleFav(id){
+  if(!me){openAuth('login');toast('Inicia sesión para guardar favoritos','err');return}
+  try{ const {fav}=await API('/favorites/'+id,{method:'POST'});
+    if(fav){favIds.add(+id);toast('Guardado en favoritos ♥','ok')}else{favIds.delete(+id);toast('Quitado de favoritos')}
+    const page=window.location.hash.replace('#','');
+    if(['results','home','favorites','detail'].includes(page))go(page,false);
+  }catch(e){toast(e.message,'err')}
+}
+async function renderFavorites(){
+  if(!me){openAuth('login');return}
+  const {cars}=await API('/favorites');
+  document.getElementById('app').innerHTML=`<div class="container"><section class="block">
+    <div class="section-head"><div><h2>Mis favoritos</h2><p>${cars.length} coche${cars.length!==1?'s':''} guardado${cars.length!==1?'s':''}</p></div></div>
+    ${cars.length?`<div class="grid-cars">${cars.map(carCard).join('')}</div>`:`<div class="empty-state"><div class="em">♡</div><h3>Aún no tienes favoritos</h3><button class="btn btn-primary" onclick="go('results')">Explorar coches</button></div>`}
+  </section></div>`;
+}
+
+/* ---------- AUTH ---------- */
+function openAuth(mode){
+  const isLogin=mode==='login';
+  showModal(`
+    <div class="tabs"><button class="${isLogin?'active':''}" onclick="openAuth('login')">Iniciar sesión</button><button class="${!isLogin?'active':''}" onclick="openAuth('register')">Crear cuenta</button></div>
+    ${isLogin?`<h2>Bienvenido de nuevo</h2><p class="mp">Accede para gestionar tus anuncios</p>
+      <div class="form-row"><label>Email</label><input id="aEmail" type="email" value="ventas@autopremium.es"></div>
+      <div class="form-row"><label>Contraseña</label><input id="aPass" type="password" value="demo"></div>
+      <button class="btn btn-primary btn-block" onclick="doLogin()">Entrar</button>
+      <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:14px">Demo: ventas@autopremium.es / demo</p>`
+    :`<h2>Crea tu cuenta gratis</h2><p class="mp">Empieza a publicar coches sin coste</p>
+      <div class="type-pick"><div class="type-opt sel" id="topt-private" onclick="pickType('private')"><div class="em">👤</div><b>Particular</b><span>Vendo mi coche</span></div><div class="type-opt" id="topt-pro" onclick="pickType('pro')"><div class="em">🏢</div><b>Profesional</b><span>Concesionario</span></div></div>
+      <div class="form-row"><label id="nameLabel">Nombre completo</label><input id="rName" placeholder="Tu nombre"></div>
+      <div class="form-row"><label>Email</label><input id="rEmail" type="email" placeholder="tu@email.com"></div>
+      <div class="form-two"><div class="form-row"><label>Teléfono</label><input id="rPhone" placeholder="600 000 000"></div><div class="form-row"><label>Ciudad</label><input id="rCity" placeholder="Madrid"></div></div>
+      <div class="form-row"><label>Contraseña</label><input id="rPass" type="password" placeholder="Mínimo 4 caracteres"></div>
+      <button class="btn btn-accent btn-block" onclick="doRegister()">Crear cuenta gratis</button>`}
+  `);
+  window._regType='private';
+}
+function pickType(t){window._regType=t;document.getElementById('topt-private').classList.toggle('sel',t==='private');document.getElementById('topt-pro').classList.toggle('sel',t==='pro');document.getElementById('nameLabel').textContent=t==='pro'?'Nombre del concesionario':'Nombre completo';}
+async function doLogin(){
+  try{ const {token:tk,user}=await API('/auth/login',{method:'POST',auth:false,body:{email:document.getElementById('aEmail').value,pass:document.getElementById('aPass').value}});
+    token=tk;localStorage.setItem('al_token',tk);me=user;await loadFavs();closeModal();renderNav();toast('¡Hola, '+user.name.split(' ')[0]+'! 👋','ok');go('dashboard');
+  }catch(e){toast(e.message,'err')}
+}
+async function doRegister(){
+  try{ const body={name:document.getElementById('rName').value,email:document.getElementById('rEmail').value,pass:document.getElementById('rPass').value,type:window._regType,phone:document.getElementById('rPhone').value,city:document.getElementById('rCity').value};
+    const {token:tk,user}=await API('/auth/register',{method:'POST',auth:false,body});
+    token=tk;localStorage.setItem('al_token',tk);me=user;favIds=new Set();closeModal();renderNav();toast('¡Cuenta creada! Bienvenido 🎉','ok');go('publish');
+  }catch(e){toast(e.message,'err')}
+}
+function logout(){token='';localStorage.removeItem('al_token');me=null;favIds=new Set();renderNav();closeMenu();toast('Sesión cerrada');go('home')}
+
+/* ---------- PUBLICAR ---------- */
+async function renderPublish(){
+  if(!me){openAuth('register');toast('Crea tu cuenta gratis para publicar','');await renderHome();return}
+  if(!pubDraft)pubDraft={brand:'',model:'',year:'',fuel:'',gear:'',body:'',price:'',km:'',power:'',color:'',province:'',doors:5,seats:5,photos:[],desc:'',extras:[],warranty:false,noAccidents:false};
+  const steps=['Datos básicos','Detalles','Fotos','Precio y publicar'];
+  document.getElementById('app').innerHTML=`<div class="container"><div class="wizard">
+    <div class="plan-note"><span class="em">🎉</span><div>Estás publicando con el plan <b>Gratis</b>. Sin coste, sin límite de anuncios, sin permanencia.</div></div>
+    <div class="wiz-steps">${steps.map((s,i)=>`<div class="wstep ${i===pubStep?'active':''} ${i<pubStep?'done':''}"><span class="n">${i<pubStep?'✓':i+1}</span><span>${s}</span></div>`).join('')}</div>
+    <div class="wiz-card" id="wizCard"></div>
+  </div></div>`;
+  renderPubStep();
+}
+function renderPubStep(){
+  const d=pubDraft;const card=document.getElementById('wizCard');
+  if(pubStep===0){
+    card.innerHTML=`<h3>Datos básicos</h3><p class="wh">Empecemos por lo esencial</p>
+      <div class="form-two"><div class="form-row"><label>Marca *</label><select id="pBrand" onchange="pubModels()"><option value="">Selecciona…</option>${Object.keys(BRANDS).map(b=>`<option ${d.brand===b?'selected':''}>${b}</option>`).join('')}</select></div>
+      <div class="form-row"><label>Modelo *</label><select id="pModel"><option value="">Selecciona…</option></select></div></div>
+      <div class="form-two"><div class="form-row"><label>Año *</label><select id="pYear"><option value="">Año…</option>${Array.from({length:20},(_,i)=>2026-i).map(y=>`<option ${+d.year===y?'selected':''}>${y}</option>`).join('')}</select></div>
+      <div class="form-row"><label>Carrocería</label><select id="pBody"><option value="">Tipo…</option>${BODIES.map(b=>`<option ${d.body===b?'selected':''}>${b}</option>`).join('')}</select></div></div>
+      <div class="wiz-nav"><span></span><button class="btn btn-primary" onclick="pubNext(0)">Continuar →</button></div>`;
+    pubModels();
+  }else if(pubStep===1){
+    card.innerHTML=`<h3>Detalles del vehículo</h3><p class="wh">Cuanta más información, más confianza</p>
+      <div class="form-two"><div class="form-row"><label>Kilómetros *</label><input id="pKm" type="number" value="${d.km}"></div><div class="form-row"><label>Potencia (CV)</label><input id="pPower" type="number" value="${d.power}"></div></div>
+      <div class="form-two"><div class="form-row"><label>Combustible *</label><select id="pFuel"><option value="">Selecciona…</option>${FUELS.map(f=>`<option ${d.fuel===f?'selected':''}>${f}</option>`).join('')}</select></div><div class="form-row"><label>Cambio *</label><select id="pGear"><option value="">Selecciona…</option>${GEARS.map(g=>`<option ${d.gear===g?'selected':''}>${g}</option>`).join('')}</select></div></div>
+      <div class="form-two"><div class="form-row"><label>Color</label><select id="pColor"><option value="">Selecciona…</option>${COLORS.map(c=>`<option ${d.color===c?'selected':''}>${c}</option>`).join('')}</select></div><div class="form-row"><label>Provincia *</label><select id="pProv"><option value="">Selecciona…</option>${PROVINCES.map(p=>`<option ${d.province===p?'selected':''}>${p}</option>`).join('')}</select></div></div>
+      <div class="form-two"><div class="form-row"><label>Puertas</label><select id="pDoors">${DOORS.map(n=>`<option ${+d.doors===n?'selected':''}>${n}</option>`).join('')}</select></div><div class="form-row"><label>Plazas</label><select id="pSeats">${SEATS.map(n=>`<option ${+d.seats===n?'selected':''}>${n}</option>`).join('')}</select></div></div>
+      <div class="form-row"><label>Equipamiento y extras</label><div class="checks" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;max-height:none">${EXTRAS.map(x=>`<label><input type="checkbox" ${d.extras.includes(x)?'checked':''} onchange="togglePubExtra('${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="form-row"><label>Estado del vehículo</label><div class="checks" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 20px"><label><input type="checkbox" ${d.noAccidents?'checked':''} onchange="togglePubFlag('noAccidents')"> Sin accidentes</label><label><input type="checkbox" ${d.warranty?'checked':''} onchange="togglePubFlag('warranty')"> Ofrezco garantía</label></div></div>
+      <div class="wiz-nav"><button class="btn btn-ghost" onclick="pubBack()">← Atrás</button><button class="btn btn-primary" onclick="pubNext(1)">Continuar →</button></div>`;
+  }else if(pubStep===2){
+    card.innerHTML=`<h3>Fotos del coche</h3><p class="wh">Los anuncios con fotos reciben hasta 5× más contactos</p>
+      <div class="photo-drop" onclick="document.getElementById('pFile').click()"><div class="em">📸</div><b>Haz clic para añadir fotos</b><p style="color:var(--muted);margin:6px 0 0">JPG o PNG · varias a la vez</p></div>
+      <input type="file" id="pFile" accept="image/*" multiple class="hidden" onchange="addPhotos(event)">
+      <div class="photo-preview" id="photoPrev">${d.photos.map((p,i)=>`<div class="pp"><img src="${p}"><button class="rm" onclick="rmPhoto(${i})">✕</button></div>`).join('')}</div>
+      <div class="wiz-nav"><button class="btn btn-ghost" onclick="pubBack()">← Atrás</button><button class="btn btn-primary" onclick="pubNext(2)">Continuar →</button></div>`;
+  }else if(pubStep===3){
+    card.innerHTML=`<h3>Precio y descripción</h3><p class="wh">Último paso antes de publicar gratis</p>
+      <div class="form-row"><label>Precio de venta al contado (€) *</label><input id="pPrice" type="number" value="${d.price}"></div>
+      <div class="form-row"><label>Descripción</label><textarea id="pDesc" placeholder="Estado, extras, mantenimiento, motivo de venta…">${d.desc}</textarea></div>
+      <div class="plan-note"><span class="em">✓</span><div>Se publicará como <b>anuncio gratuito</b>. Podrás editarlo o destacarlo desde tu panel.</div></div>
+      <div class="wiz-nav"><button class="btn btn-ghost" onclick="pubBack()">← Atrás</button><button class="btn btn-accent btn-lg" onclick="publishCar()">🚀 Publicar gratis</button></div>`;
+  }
+}
+function pubModels(){const b=document.getElementById('pBrand')?.value;const m=document.getElementById('pModel');if(!m)return;m.innerHTML='<option value="">Selecciona…</option>'+(b&&BRANDS[b]?BRANDS[b].map(x=>`<option ${pubDraft.model===x?'selected':''}>${x}</option>`).join(''):'')}
+function saveStep(){const g=id=>document.getElementById(id)?.value;
+  if(pubStep===0){pubDraft.brand=g('pBrand')||pubDraft.brand;pubDraft.model=g('pModel')||pubDraft.model;pubDraft.year=g('pYear')||pubDraft.year;pubDraft.body=g('pBody')||pubDraft.body}
+  if(pubStep===1){pubDraft.km=g('pKm');pubDraft.power=g('pPower');pubDraft.fuel=g('pFuel');pubDraft.gear=g('pGear');pubDraft.color=g('pColor');pubDraft.province=g('pProv');pubDraft.doors=g('pDoors');pubDraft.seats=g('pSeats')}
+  if(pubStep===3){pubDraft.price=g('pPrice');pubDraft.desc=g('pDesc')}}
+function pubNext(step){saveStep();
+  if(step===0&&(!pubDraft.brand||!pubDraft.model||!pubDraft.year)){toast('Completa marca, modelo y año','err');return}
+  if(step===1&&(!pubDraft.km||!pubDraft.fuel||!pubDraft.gear||!pubDraft.province)){toast('Completa km, combustible, cambio y provincia','err');return}
+  pubStep++;renderPublish()}
+function pubBack(){saveStep();pubStep--;renderPublish()}
+function togglePubExtra(x){const i=pubDraft.extras.indexOf(x);if(i>=0)pubDraft.extras.splice(i,1);else pubDraft.extras.push(x)}
+function togglePubFlag(k){pubDraft[k]=!pubDraft[k]}
+function addPhotos(e){const files=[...e.target.files];let pending=files.length;files.forEach(f=>{const r=new FileReader();r.onload=()=>{pubDraft.photos.push(r.result);if(--pending===0)renderPubStep()};r.readAsDataURL(f)})}
+function rmPhoto(i){pubDraft.photos.splice(i,1);renderPubStep()}
+async function publishCar(){
+  saveStep();const d=pubDraft;
+  if(!d.price){toast('Indica el precio','err');return}
+  try{ const {car}=await API('/cars',{method:'POST',body:{brand:d.brand,model:d.model,year:+d.year,fuel:d.fuel,gear:d.gear,body:d.body,price:+d.price,km:+d.km,power:+d.power,color:d.color,province:d.province,doors:+d.doors,seats:+d.seats,extras:d.extras,warranty:d.warranty,noAccidents:d.noAccidents,desc:d.desc,photos:d.photos}});
+    pubDraft=null;pubStep=0;toast('¡Anuncio publicado gratis! 🎉','ok');currentDetail=car.id;go('detail');
+  }catch(e){toast(e.message,'err')}
+}
+
+/* ---------- PANEL ---------- */
+async function renderDashboard(){
+  if(!me){openAuth('login');return}
+  const {cars}=await API('/my/cars');
+  const {threads}=await API('/threads').catch(()=>({threads:[]}));
+  const totalViews=cars.reduce((s,c)=>s+c.views,0);
+  const active=cars.filter(c=>c.status==='active').length;
+  document.getElementById('app').innerHTML=`<div class="container"><div class="dash-layout">
+    <aside class="dash-side"><a class="active" onclick="go('dashboard')">▤ Mis anuncios</a><a onclick="go('publish')">＋ Publicar coche</a><a onclick="go('favorites')">♥ Favoritos</a><a onclick="go('messages')">✉ Mensajes ${threads.length?`(${threads.length})`:''}</a><a onclick="logout()">⏻ Cerrar sesión</a></aside>
+    <div>
+      <div class="section-head"><div><h2>Hola, ${me.name.split(' ')[0]} 👋</h2><p>${me.type==='pro'?'Panel de concesionario':'Tu panel de vendedor'} · Plan ${me.plan}</p></div><button class="btn btn-accent" onclick="go('publish')">＋ Publicar coche</button></div>
+      <div class="dash-stats">
+        <div class="stat-card"><div class="lab">Anuncios activos</div><div class="val">${active}</div></div>
+        <div class="stat-card"><div class="lab">Visitas totales</div><div class="val">${fmt(totalViews)}</div></div>
+        <div class="stat-card"><div class="lab">Mensajes</div><div class="val">${threads.length}</div></div>
+        <div class="stat-card"><div class="lab">Coste este mes</div><div class="val">0 €<small> gratis</small></div></div>
+      </div>
+      ${cars.length?`<div class="mylist">${cars.map(c=>`<div class="row">
+        <div class="thumb">${c.photos&&c.photos.length?`<img src="${c.photos[0]}" style="width:100%;height:100%;object-fit:cover">`:'<div class="placeholder">🚗</div>'}</div>
+        <div class="info"><h4>${c.brand} ${c.model} ${c.year}</h4><div class="meta">${euro(c.price)} · ${fmt(c.km)} km · ${c.province}</div>
+          <div class="st-badges"><span class="stbadge ${c.status==='active'?'active':''}">${c.status==='active'?'● Activo':'○ Pausado'}</span><span class="stbadge views">👁 ${c.views} visitas</span>${c.featured?'<span class="stbadge" style="background:#eafaf3;color:var(--accent-dark)">★ Destacado</span>':''}</div></div>
+        <div class="acts"><button class="btn btn-ghost btn-sm" onclick="openDetail(${c.id})">Ver</button><button class="btn btn-ghost btn-sm" onclick="carAction(${c.id},'status')">${c.status==='active'?'Pausar':'Activar'}</button><button class="btn ${c.featured?'btn-ghost':'btn-accent'} btn-sm" onclick="carAction(${c.id},'feature')">${c.featured?'Quitar ★':'Destacar'}</button><button class="btn btn-danger btn-sm" onclick="delCar(${c.id})">Eliminar</button></div>
+      </div>`).join('')}</div>`:`<div class="empty-state" style="background:#fff;border-radius:14px"><div class="em">🚗</div><h3>Aún no has publicado ningún coche</h3><button class="btn btn-accent btn-lg" onclick="go('publish')">＋ Publicar mi primer coche</button></div>`}
+    </div></div></div>`;
+}
+async function carAction(id,action){try{await API('/cars/'+id+'/'+action,{method:'POST'});renderDashboard()}catch(e){toast(e.message,'err')}}
+async function delCar(id){if(!confirm('¿Eliminar este anuncio? No se puede deshacer.'))return;try{await API('/cars/'+id,{method:'DELETE'});toast('Anuncio eliminado');renderDashboard()}catch(e){toast(e.message,'err')}}
+
+/* ---------- CONTACTO / MENSAJES ---------- */
+function contactSeller(cid,label){
+  if(!me){openAuth('login');toast('Inicia sesión para contactar','err');return}
+  showModal(`<h2>Contactar</h2><p class="mp">Escribe al vendedor sobre el ${label}</p><div class="form-row"><label>Tu mensaje</label><textarea id="cMsg">Hola, estoy interesado en el ${label}. ¿Sigue disponible?</textarea></div><button class="btn btn-primary btn-block" onclick="sendContact(${cid})">Enviar mensaje</button>`);
+}
+async function sendContact(cid){
+  const txt=document.getElementById('cMsg').value.trim();if(!txt){toast('Escribe un mensaje','err');return}
+  try{await API('/threads',{method:'POST',body:{carId:cid,body:txt}});closeModal();toast('Mensaje enviado ✓','ok');}catch(e){toast(e.message,'err')}
+}
+async function renderMessages(){
+  if(!me){openAuth('login');return}
+  const {threads}=await API('/threads');
+  document.getElementById('app').innerHTML=`<div class="container">
+    <div class="section-head" style="margin-top:26px"><div><h2>Mensajes</h2><p>Tus conversaciones</p></div></div>
+    ${threads.length?`<div class="msg-layout"><div class="msg-list" id="msgList">${threads.map(msgItem).join('')}</div><div class="msg-thread" id="msgThread"><div class="empty-state" style="margin:auto"><div class="em">✉</div><p>Selecciona una conversación</p></div></div></div>`:`<div class="empty-state"><div class="em">✉</div><h3>No tienes mensajes todavía</h3><button class="btn btn-primary" onclick="go('results')">Explorar coches</button></div>`}
+  </div>`;
+  if(threads.length){activeThread=threads[0].id;openThread(threads[0].id)}
+}
+function msgItem(t){
+  return `<div class="msg-item ${t.id===activeThread?'active':''}" onclick="openThread(${t.id})">
+    <span class="av">${initials(t.other&&t.other.name)}</span>
+    <div class="mi"><div class="top"><b>${t.other?t.other.name.split(' ')[0]:'Usuario'}</b><span class="time">${t.last?daysAgo(t.last.ts):''}</span></div>
+    <div style="font-size:12px;color:var(--muted)">${t.car?t.car.brand+' '+t.car.model:''}</div>
+    <div class="prev">${t.last?t.last.body:''}</div></div></div>`;
+}
+async function openThread(id){
+  activeThread=id;
+  const {messages}=await API('/threads/'+id);
+  const {threads}=await API('/threads');
+  const t=threads.find(x=>x.id===id)||{};
+  document.getElementById('msgList').innerHTML=threads.map(msgItem).join('');
+  document.getElementById('msgThread').innerHTML=`
+    <div class="th-head">${t.other?t.other.name:'Usuario'} · <span style="font-weight:400;color:var(--muted)">${t.car?t.car.brand+' '+t.car.model:''}</span></div>
+    <div class="th-body" id="thBody">${messages.map(m=>`<div class="bubble ${m.from===me.id?'out':'in'}">${m.txt}</div>`).join('')}</div>
+    <div class="th-input"><input id="thInput" placeholder="Escribe un mensaje…" onkeydown="if(event.key==='Enter')sendThread(${id})"><button class="btn btn-primary" onclick="sendThread(${id})">Enviar</button></div>`;
+  const b=document.getElementById('thBody');b.scrollTop=b.scrollHeight;
+}
+async function sendThread(id){
+  const inp=document.getElementById('thInput');const txt=inp.value.trim();if(!txt)return;
+  try{await API('/threads/'+id+'/messages',{method:'POST',body:{body:txt}});openThread(id)}catch(e){toast(e.message,'err')}
+}
+
+/* ---------- PRECIOS ---------- */
+async function renderPricing(){
+  document.getElementById('app').innerHTML=`<div class="container"><div class="pricing">
+    <div class="launch-banner"><b>🎉 Oferta de lanzamiento:</b> todos los planes son GRATIS durante la fase beta. Publica sin coste mientras hacemos crecer la comunidad.</div>
+    <div class="pricing-head"><h2>Planes pensados para vender más</h2><p>Empieza gratis. Cuando el portal esté lleno de compradores, ofreceremos planes premium opcionales. Los que llegan ahora, entran gratis.</p></div>
+    <div class="plans">
+      <div class="plan"><h3>Particular</h3><p class="pdesc">Para vender tu coche</p><div class="amount">0 €</div><div class="period">siempre gratis</div>
+        <ul><li><span class="ck">✓</span> Hasta 3 anuncios activos</li><li><span class="ck">✓</span> Fotos ilimitadas</li><li><span class="ck">✓</span> Mensajería con compradores</li><li><span class="ck">✓</span> Estadísticas de visitas</li><li class="off"><span>✕</span> Anuncios destacados</li></ul>
+        <button class="btn btn-ghost btn-block" onclick="go('publish')">Publicar gratis</button></div>
+      <div class="plan featured"><span class="pop">MÁS POPULAR</span><h3>Profesional</h3><p class="pdesc">Para concesionarios</p><div class="amount">0 €<small> ahora</small></div><div class="period">gratis en beta · luego desde 49 €/mes</div>
+        <ul><li><span class="ck">✓</span> <b>Anuncios ilimitados</b></li><li><span class="ck">✓</span> Ficha de concesionario</li><li><span class="ck">✓</span> Panel de gestión de stock</li><li><span class="ck">✓</span> Estadísticas avanzadas</li><li><span class="ck">✓</span> Soporte prioritario</li></ul>
+        <button class="btn btn-primary btn-block" onclick="startPro()">Empezar gratis</button></div>
+      <div class="plan"><h3>Premium</h3><p class="pdesc">Máxima visibilidad</p><div class="amount">0 €<small> ahora</small></div><div class="period">gratis en beta · luego desde 99 €/mes</div>
+        <ul><li><span class="ck">✓</span> Todo lo de Profesional</li><li><span class="ck">✓</span> Anuncios siempre destacados</li><li><span class="ck">✓</span> Aparición en portada</li><li><span class="ck">✓</span> Etiqueta verificado</li><li><span class="ck">✓</span> Gestor de cuenta dedicado</li></ul>
+        <button class="btn btn-ghost btn-block" onclick="startPro()">Empezar gratis</button></div>
+    </div>
+    <div class="value" style="margin-top:44px"><div><h2>¿Y cómo ganáis dinero si es gratis?</h2><p>Primero llenamos el portal de coches y compradores. Cuando aportemos valor real, ofreceremos servicios premium opcionales: destacados, publicidad y herramientas para grandes concesionarios.</p><button class="btn btn-accent btn-lg" onclick="go('publish')">Publicar mi coche</button></div>
+      <div class="cost-compare"><h3 style="margin:0 0 8px">Lo que te ahorras al año</h3><div class="row"><span>Portal líder (≈450 €/mes)</span><span class="them">5.400 €</span></div><div class="row"><span>Con AutoLibre</span><span class="us">0 €</span></div><div class="row"><span>Ahorro anual</span><span class="us">hasta 5.400 €</span></div></div>
+    </div>
+  </div></div>`;
+}
+async function startPro(){
+  if(!me){openAuth('register');return}
+  try{const {user}=await API('/auth/plan',{method:'POST',body:{plan:'Profesional'}});me=user;renderNav();toast('¡Plan Profesional activado gratis! 🎉','ok');go('dashboard');}catch(e){toast(e.message,'err')}
+}
+
+/* ---------- MODAL ---------- */
+function showModal(html,wide=false){closeModal();const o=document.createElement('div');o.className='overlay';o.id='overlay';o.onclick=e=>{if(e.target===o)closeModal()};o.innerHTML=`<div class="modal ${wide?'wide':''}"><button class="close-x" onclick="closeModal()">✕</button>${html}</div>`;document.body.appendChild(o);}
+function closeModal(){document.getElementById('overlay')?.remove()}
+
+/* ---------- INIT ---------- */
+window.addEventListener('load',async()=>{
+  await restoreSession();
+  renderNav();
+  const h=window.location.hash.replace('#','');
+  if(h&&['home','results','publish','dashboard','favorites','messages'].includes(h))go(h,false);
+  else renderHome();
+});
+</script>
+</body>
+</html>
