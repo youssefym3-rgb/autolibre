@@ -760,7 +760,7 @@ function ssrListPage(res, opts) {
   };
   const brands = distinctActive('brand');
   const provinces = distinctActive('province');
-  const meta = `__WIDE__
+  const meta = `<!--__WIDE__-->
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${BASE_URL}${pathUrl}">
 ${rows.length ? '' : '<meta name="robots" content="noindex,follow">'}
