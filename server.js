@@ -527,7 +527,7 @@ async function api(req, res, url) {
         threads: g('SELECT COUNT(*) c FROM threads').c,
         views: g('SELECT COALESCE(SUM(views),0) c FROM cars').c,
         avgPrice: Math.round(g("SELECT COALESCE(AVG(price),0) c FROM cars WHERE status='active'").c),
-        last7d: g('SELECT COUNT(*) c FROM cars WHERE created>?', ).c !== undefined ? db.prepare('SELECT COUNT(*) c FROM cars WHERE created>?').get(Date.now() - 7 * 864e5).c : 0
+        last7d: db.prepare('SELECT COUNT(*) c FROM cars WHERE created>?').get(Date.now() - 7 * 864e5).c
       });
     }
     if (p === '/api/admin/users' && method === 'GET') {
@@ -586,11 +586,21 @@ h2{color:#0b2540;font-size:19px;margin:24px 0 8px}p,li{font-size:15px;color:#3a4
 .btn{display:inline-block;background:#e85d04;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700;margin-top:10px}
 footer{background:#0b2540;color:#b9c7d6;padding:24px 0;font-size:13px;text-align:center;margin-top:40px}footer a{color:#b9c7d6}
 table{border-collapse:collapse;width:100%;margin:10px 0}td{border:1px solid #e3e8ef;padding:8px 10px;font-size:14px}
+.wide{max-width:1080px}
+.grid-seo{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;margin:18px 0}
+.card-seo{border:1px solid #e3e8ef;border-radius:12px;overflow:hidden;text-decoration:none;color:#1c2733;display:block}
+.card-seo img{width:100%;height:150px;object-fit:cover;display:block;background:#eef2f7}
+.card-seo .ph{width:100%;height:150px;display:grid;place-items:center;background:#eef2f7;color:#9aa8b7;font-size:34px}
+.card-seo .in{padding:10px 12px}.card-seo .t{font-weight:700;font-size:15px;color:#0b2540}
+.card-seo .pr{color:#e85d04;font-weight:800;font-size:17px;margin-top:2px}
+.card-seo .mt{color:#6b7a89;font-size:12.5px;margin-top:3px}
+.linkbox{margin:26px 0}.linkbox h2{margin-bottom:10px}
+.linkbox a{display:inline-block;background:#f2f5f9;border:1px solid #e3e8ef;border-radius:20px;padding:6px 14px;margin:0 8px 8px 0;font-size:13.5px;text-decoration:none;color:#0b5ed7}
 </style>
 </head>
 <body>
 <header><div class="nav"><a class="logo" href="/">◈ Merca<b>Coches</b></a><a href="/" style="color:#b9c7d6;font-size:14px">← Volver a la web</a></div></header>
-<main><div class="container">${body}</div></main>
+<main><div class="container ${meta && meta.includes('__WIDE__') ? 'wide' : ''}">${body}</div></main>
 <footer><div class="container"><p>© 2026 MercaCoches (mercacoches.es)</p>
 <p><a href="/aviso-legal">Aviso legal</a> · <a href="/terminos">Términos de uso</a> · <a href="/privacidad">Privacidad</a> · <a href="/cookies">Cookies</a></p></div></footer>
 </body></html>`;
@@ -664,7 +674,7 @@ const LEGAL_PAGES = {
 
 function ssrCarPage(id, res) {
   const c = db.prepare("SELECT * FROM cars WHERE id=? AND status='active'").get(id);
-  if (!c) return sendHtml(res, 404, pageShell('Anuncio no encontrado — MercaCoches', '<h1>Anuncio no disponible</h1><p>Este anuncio ya no existe o fue retirado.</p><a class="btn" href="/#results">Ver coches disponibles</a>'));
+  if (!c) return sendHtml(res, 404, pageShell('Anuncio no encontrado — MercaCoches', '<h1>Anuncio no disponible</h1><p>Este anuncio ya no existe o fue retirado.</p><a class="btn" href="/coches">Ver coches disponibles</a>'));
   const car = carOut(c);
   const title = `${car.brand} ${car.model} ${car.year} — ${car.price.toLocaleString('es-ES')} € | MercaCoches`;
   const desc = `${car.brand} ${car.model} de ${car.year}, ${car.km.toLocaleString('es-ES')} km, ${car.fuel}, ${car.gear}, en ${car.province}. ${car.price.toLocaleString('es-ES')} € al contado. Anuncio de ${car.sellerType === 'pro' ? 'concesionario' : 'particular'} en MercaCoches.`;
@@ -699,16 +709,93 @@ ${car.photos[0] ? `<img src="${esc(car.photos[0])}" alt="${esc(car.brand)} ${esc
 <table>${rows.map(r => `<tr><td><b>${r[0]}</b></td><td>${esc(r[1])}</td></tr>`).join('')}</table>
 <p>${esc(car.desc)}</p>
 ${car.extras.length ? `<h2>Equipamiento</h2><ul>${car.extras.map(e => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}
+<p style="margin-top:14px"><a href="/coches/${slugify(car.brand)}">Más ${esc(car.brand)} de segunda mano</a>${car.province ? ` · <a href="/coches/${slugify(car.province)}">Más coches en ${esc(car.province)}</a>` : ''}</p>
 <a class="btn" href="/#car-${car.id}">Ver anuncio completo y contactar →</a>`;
+  return sendHtml(res, 200, pageShell(title, body, meta));
+}
+
+/* ================================================================
+   SEO: páginas de listado indexables (marca / provincia / combinadas)
+   URLs: /coches · /coches/bmw · /coches/madrid · /coches/bmw/madrid
+   ================================================================ */
+function slugify(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+function distinctActive(col) {
+  return db.prepare(`SELECT DISTINCT ${col} v FROM cars WHERE status='active' AND ${col} IS NOT NULL AND ${col}<>'' ORDER BY ${col}`).all().map(r => r.v);
+}
+function bySlug(list, s) { return list.find(v => slugify(v) === s) || null; }
+
+function seoCarCard(car) {
+  const t = `${car.brand} ${car.model} ${car.year}`;
+  const img = car.photos[0]
+    ? `<img src="${esc(car.photos[0])}" alt="${esc(t)}" loading="lazy">`
+    : `<div class="ph">🚗</div>`;
+  return `<a class="card-seo" href="/coche/${car.id}">${img}<div class="in">
+    <div class="t">${esc(t)}</div>
+    <div class="pr">${car.price.toLocaleString('es-ES')} €</div>
+    <div class="mt">${car.km.toLocaleString('es-ES')} km · ${esc(car.fuel || '—')} · ${esc(car.province || 'España')}</div>
+  </div></a>`;
+}
+
+function ssrListPage(res, opts) {
+  const brand = opts.brand || '', province = opts.province || '';
+  const rows = queryCars({ brand, province, sort: 'recent' }).map(carOut);
+  const pathUrl = '/coches' + (brand ? '/' + slugify(brand) : '') + (province ? '/' + slugify(province) : '');
+  const what = brand ? `${brand} de segunda mano` : 'Coches de segunda mano';
+  const where = province ? ` en ${province}` : (brand ? '' : ' en España');
+  const title = `${what}${where} — MercaCoches`;
+  const desc = rows.length
+    ? `${rows.length} ${brand ? 'anuncios de ' + brand : 'coches de segunda mano'}${where}. Compra directamente al vendedor: publicar es gratis y sin comisiones en MercaCoches.`
+    : `Compra y vende ${brand || 'coches'}${where} de segunda mano. Publicar tu anuncio es gratis y sin comisiones en MercaCoches.`;
+  const shown = rows.slice(0, 48);
+  const jsonld = {
+    '@context': 'https://schema.org', '@type': 'ItemList',
+    name: `${what}${where}`, numberOfItems: rows.length,
+    itemListElement: shown.slice(0, 24).map((c, i) => ({
+      '@type': 'ListItem', position: i + 1, url: `${BASE_URL}/coche/${c.id}`,
+      name: `${c.brand} ${c.model} ${c.year}`
+    }))
+  };
+  const brands = distinctActive('brand');
+  const provinces = distinctActive('province');
+  const meta = `__WIDE__
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${BASE_URL}${pathUrl}">
+${rows.length ? '' : '<meta name="robots" content="noindex,follow">'}
+<meta property="og:type" content="website"><meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${BASE_URL}${pathUrl}">
+<meta property="og:image" content="${BASE_URL}/og.png"><meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">${JSON.stringify(jsonld)}</script>`;
+  const crumbs = `<p style="font-size:13px;color:#6b7a89"><a href="/">Inicio</a> › <a href="/coches">Coches</a>${brand ? ` › <a href="/coches/${slugify(brand)}">${esc(brand)}</a>` : ''}${province ? ` › ${esc(province)}` : ''}</p>`;
+  const body = `
+${crumbs}
+<h1>${esc(what)}${esc(where)}</h1>
+<p>${rows.length ? `<b>${rows.length}</b> anuncio${rows.length === 1 ? '' : 's'} publicados directamente por sus vendedores. Sin comisiones ni intermediarios: contacta gratis con el vendedor.` : `Todavía no hay anuncios${where || ''} de ${esc(brand || 'esta búsqueda')}. Sé el primero: publicar es gratis.`}</p>
+<p><a class="btn" href="/#publish">Publica tu ${esc(brand || 'coche')} gratis →</a></p>
+${shown.length ? `<div class="grid-seo">${shown.map(seoCarCard).join('')}</div>` : ''}
+${rows.length > shown.length ? `<p><a href="/#results">Ver los ${rows.length} anuncios en el buscador →</a></p>` : ''}
+<div class="linkbox"><h2>Buscar por marca</h2>${brands.map(b => `<a href="/coches/${slugify(b)}">${esc(b)}</a>`).join('')}</div>
+${provinces.length ? `<div class="linkbox"><h2>Buscar por provincia</h2>${provinces.map(pv => `<a href="/coches${brand ? '/' + slugify(brand) : ''}/${slugify(pv)}">${esc(brand ? brand + ' en ' : '')}${esc(pv)}</a>`).join('')}</div>` : ''}`;
   return sendHtml(res, 200, pageShell(title, body, meta));
 }
 
 function ssrSitemap(res) {
   const cars = db.prepare("SELECT id FROM cars WHERE status='active'").all();
-  const urls = [BASE_URL + '/', BASE_URL + '/aviso-legal', BASE_URL + '/terminos', BASE_URL + '/privacidad', BASE_URL + '/cookies',
-    ...cars.map(c => `${BASE_URL}/coche/${c.id}`)];
+  const brands = distinctActive('brand');
+  const provinces = distinctActive('province');
+  const combos = db.prepare("SELECT DISTINCT brand, province FROM cars WHERE status='active' AND brand<>'' AND province<>''").all();
+  const urls = [
+    BASE_URL + '/', BASE_URL + '/coches',
+    BASE_URL + '/aviso-legal', BASE_URL + '/terminos', BASE_URL + '/privacidad', BASE_URL + '/cookies',
+    ...brands.map(b => `${BASE_URL}/coches/${slugify(b)}`),
+    ...provinces.map(pv => `${BASE_URL}/coches/${slugify(pv)}`),
+    ...combos.map(c => `${BASE_URL}/coches/${slugify(c.brand)}/${slugify(c.province)}`),
+    ...cars.map(c => `${BASE_URL}/coche/${c.id}`)
+  ];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-    urls.map(u => `  <url><loc>${u}</loc></url>`).join('\n') + '\n</urlset>';
+    [...new Set(urls)].map(u => `  <url><loc>${u}</loc></url>`).join('\n') + '\n</urlset>';
   res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8', ...SEC_HEADERS });
   res.end(xml);
 }
@@ -738,6 +825,22 @@ const server = http.createServer((req, res) => {
   if (p === '/sitemap.xml') return ssrSitemap(res);
   let m;
   if ((m = p.match(/^\/coche\/(\d+)\/?$/))) return ssrCarPage(+m[1], res);
+  // Listados indexables: /coches · /coches/<marca|provincia> · /coches/<marca>/<provincia>
+  if (p === '/coches' || p === '/coches/') return ssrListPage(res, {});
+  if ((m = p.match(/^\/coches\/([a-z0-9-]+)\/?$/))) {
+    const seg = m[1];
+    const brand = bySlug(distinctActive('brand'), seg);
+    if (brand) return ssrListPage(res, { brand });
+    const province = bySlug(distinctActive('province'), seg);
+    if (province) return ssrListPage(res, { province });
+    return ssrListPage(res, {}); // slug desconocido: listado general (noindex si vacío no aplica; canonical /coches)
+  }
+  if ((m = p.match(/^\/coches\/([a-z0-9-]+)\/([a-z0-9-]+)\/?$/))) {
+    const brand = bySlug(distinctActive('brand'), m[1]);
+    const province = bySlug(distinctActive('province'), m[2]);
+    if (brand || province) return ssrListPage(res, { brand: brand || '', province: province || '' });
+    return ssrListPage(res, {});
+  }
   if (LEGAL_PAGES[p]) return sendHtml(res, 200, pageShell(LEGAL_PAGES[p][0], LEGAL_PAGES[p][1]));
   if (p === '/og.png' && fs.existsSync(path.join(__dirname, 'og.png'))) return serveStatic(res, path.join(__dirname, 'og.png'));
   // Estructura plana: cualquier otra ruta sirve la SPA (index.html)
