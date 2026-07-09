@@ -7,7 +7,7 @@
 <title>MercaCoches · Coches de segunda mano y ocasión. Publicar es gratis</title>
 <meta name="description" content="Compra y vende coches de segunda mano en España. Publicar tu anuncio es gratis: sin comisiones ni cuotas. Particulares y concesionarios.">
 <link rel="canonical" href="https://mercacoches.es/">
-<meta name="google-site-verification" content="0KFkptI2G2ek4MycEsE0BU9pUel-oHMfBlroggIO66E">
+<meta name="google-site-verification" content="0KFkptI2G2ek4MycEsE0BU9pUel-oHMfBlroggIO66E" />
 <meta property="og:type" content="website">
 <meta property="og:title" content="MercaCoches · Coches de segunda mano. Publicar es gratis">
 <meta property="og:description" content="Compra y vende coches de segunda mano en España. Sin comisiones ni cuotas.">
@@ -15,6 +15,7 @@
 <meta property="og:image" content="https://mercacoches.es/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"MercaCoches","url":"https://mercacoches.es/","inLanguage":"es"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"MercaCoches","url":"https://mercacoches.es/","description":"Portal de compraventa de coches de segunda mano. Publicar es gratis."}</script>
 <style>
 html{color-scheme:light;}
 :root{color-scheme:light;
@@ -337,6 +338,124 @@ footer.foot{background:#0f172a;color:#cbd5e1;padding:48px 0 24px;margin-top:20px
   .form-two,.type-pick,.dash-stats{grid-template-columns:1fr}
   .hero-stats{gap:20px}
 }
+
+/* ══ TEMA "MOTOR DIARIO" — negro asfalto + rojo · tipografía condensada ══ */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600&display=swap');
+:root{
+  --brand:#E8001D;--brand-dark:#c8001a;--accent:#E8001D;--accent-dark:#c8001a;
+  --ink:#F5F5F7;--muted:#8a8a90;--line:#2C2C2E;--bg:#0A0A0A;--card:#1C1C1E;
+  --warn:#f5a623;--danger:#ff4d4d;--radius:6px;
+  --shadow:0 4px 18px rgba(0,0,0,.5);--shadow-lg:0 16px 48px rgba(0,0,0,.65);
+  --rojo:#E8001D;--negro:#0A0A0A;--asfalto:#1C1C1E;--plomo:#2C2C2E;--titanio:#F5F5F7;--grisc:#aeaeb2;
+}
+body{background:var(--negro);color:var(--titanio);font-family:'Barlow',sans-serif}
+h1,h2,h3,h4,.logo,.section-head h2,.car-title,.big-price,.price{font-family:'Barlow Condensed','Barlow',sans-serif}
+.container{max-width:1200px}
+.btn{border-radius:5px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.btn-primary,.btn-accent{background:var(--rojo);color:#fff}
+.btn-primary:hover,.btn-accent:hover{background:var(--brand-dark)}
+.btn-ghost{background:var(--plomo);color:var(--titanio);border:1px solid var(--plomo)}
+.btn-ghost:hover{border-color:var(--rojo);color:#fff;background:#3a3a3c}
+.btn-danger{background:rgba(255,77,77,.14);color:#ff6b6b}
+header.top{background:var(--negro);border-bottom:1px solid var(--plomo)}
+.logo{color:#fff;font-weight:900;font-size:26px;letter-spacing:0;text-transform:uppercase}
+.logo .mark{background:var(--rojo);border-radius:0;color:#fff}
+.logo b{color:var(--rojo)}
+.nav-links a{color:var(--muted);text-transform:uppercase;font-family:'Barlow Semi Condensed',sans-serif;font-size:14px;letter-spacing:.05em}
+.nav-links a:hover{color:#fff}
+.user-chip{background:var(--plomo);color:var(--titanio)}
+.user-chip .av{background:var(--rojo)}
+.dropdown{background:var(--asfalto);border:1px solid var(--plomo)}
+.dropdown a{color:var(--titanio)}.dropdown a:hover{background:var(--plomo)}
+.dropdown hr{border-top-color:var(--plomo)}
+.ticker{background:var(--asfalto);border-top:2px solid var(--rojo);border-bottom:1px solid var(--plomo);display:flex;overflow:hidden;height:38px;align-items:stretch}
+.ticker-label{background:var(--rojo);padding:0 16px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fff;display:flex;align-items:center;white-space:nowrap;flex-shrink:0}
+.ticker-track{display:flex;align-items:center;animation:ticker 44s linear infinite;white-space:nowrap}
+.ticker-track:hover{animation-play-state:paused}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ticker-item{padding:0 30px;font-family:'Barlow Semi Condensed',sans-serif;font-size:13px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:10px}
+.ticker-item::before{content:'\2022';color:var(--rojo);font-size:6px}
+.hero{background:var(--negro);padding:0;position:relative;overflow:hidden;min-height:520px;display:flex;align-items:flex-end}
+.hero:after{display:none}
+.hero-bg{position:absolute;inset:0;z-index:0;background:linear-gradient(to right,rgba(10,10,10,.96) 34%,rgba(10,10,10,.35) 72%,rgba(10,10,10,.15) 100%),linear-gradient(to top,rgba(10,10,10,.9),transparent 55%),url('https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=1500&q=80') center/cover no-repeat}
+.hero .container{position:relative;z-index:2;padding-top:56px;padding-bottom:150px}
+.hero h1{font-size:60px;font-weight:900;line-height:.94;letter-spacing:-.01em;text-transform:uppercase;color:#fff;max-width:760px;margin:0 0 16px}
+.hero h1 em{font-style:normal;color:var(--rojo)}
+.hero p.sub{font-family:'Barlow',sans-serif;font-size:18px;color:rgba(245,245,247,.82);max-width:560px;text-transform:none}
+.badge-free{background:var(--rojo);border:0;color:#fff;border-radius:3px;font-family:'Barlow Condensed',sans-serif;font-weight:800;letter-spacing:.1em;text-transform:uppercase;font-size:12px}
+.hero-stats{margin-top:30px}
+.hero-stats .s b{font-family:'Barlow Condensed',sans-serif;color:#fff}
+.hero-stats .s span{color:var(--grisc)}
+.searchbox{background:var(--asfalto);border:1px solid var(--plomo);border-top:3px solid var(--rojo);border-radius:4px;box-shadow:var(--shadow-lg)}
+.searchbox h3{color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.03em;font-size:19px}
+.field label{color:var(--muted)}
+.field select,.field input{background:#0f0f10;border:1px solid var(--plomo);color:var(--titanio)}
+.field select:focus,.field input:focus{outline:2px solid var(--rojo);border-color:var(--rojo)}
+.chip{background:var(--plomo);color:var(--titanio);border:1px solid var(--plomo)}
+.chip:hover{border-color:var(--rojo);color:#fff}
+.section-head h2{font-family:'Barlow Condensed',sans-serif;font-weight:900;text-transform:uppercase;color:#fff;letter-spacing:-.01em}
+.section-head p{color:var(--muted)}
+.section-head{border-bottom:2px solid var(--rojo);padding-bottom:14px}
+.more{color:var(--muted);text-transform:uppercase;font-family:'Barlow Semi Condensed',sans-serif;font-weight:600;font-size:13px}
+.more:hover{color:var(--rojo)}
+.car-card{background:var(--asfalto);border:1px solid var(--plomo);border-radius:4px;box-shadow:none}
+.car-card:hover{border-color:var(--rojo);transform:translateY(-3px)}
+.car-photo{background:#111}
+.car-photo .placeholder{background:repeating-linear-gradient(45deg,#1c1c1e,#1c1c1e 12px,#222 12px,#222 24px);color:#3a3a3c}
+.car-title{font-weight:800;text-transform:uppercase;color:#fff;font-size:17px}
+.car-sub{color:var(--muted)}
+.car-specs .spec{color:var(--grisc)}
+.price{color:#fff;font-weight:900;font-size:22px}
+.tag.pro{background:var(--rojo);color:#fff}
+.tag.new{background:#fff;color:var(--negro)}
+.car-foot{border-top:1px solid var(--plomo)}
+.seller-mini{color:var(--muted)}
+.badge-free,.tag{border-radius:2px}
+.value h2,.cost-compare h3{color:#fff;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+.value p{color:var(--grisc)}
+.vf .ic{background:var(--rojo);color:#fff}
+.cost-compare{background:var(--asfalto);border:1px solid var(--plomo);border-radius:4px}
+.cost-compare .row{border-bottom:1px solid var(--plomo)}
+.cost-compare .them{color:var(--muted)}
+.cost-compare .us{color:var(--rojo)}
+.brand-pill{background:var(--asfalto);border:1px solid var(--plomo)}
+.brand-pill:hover{border-color:var(--rojo)}
+.brand-pill b{color:#fff}.brand-pill span{color:var(--muted)}
+.filters{background:var(--asfalto);border:1px solid var(--plomo)}
+.filters h4{color:#fff;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif}
+.filter-group label{color:var(--muted)}
+.filter-group select,.filter-group input{background:#0f0f10;border:1px solid var(--plomo);color:var(--titanio)}
+.checks label{color:var(--grisc)}
+.clear{color:var(--rojo)}
+.results-top .count{color:#fff;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;font-weight:800}
+.sort-wrap select{background:#0f0f10;border:1px solid var(--plomo);color:var(--titanio);border-radius:5px;padding:8px}
+.empty-state{background:var(--asfalto)!important;border:1px solid var(--plomo);border-radius:6px;color:var(--muted)}
+.detail-desc,.side-card,.spec-box,.detail-gallery{background:var(--asfalto)!important;border:1px solid var(--plomo);color:var(--titanio)}
+.big-price{color:#fff}.detail-crumbs{color:var(--muted)}
+.dash-side{background:var(--asfalto);border:1px solid var(--plomo)}
+.dash-side a{color:var(--grisc)}
+.dash-side a.active,.dash-side a:hover{background:var(--plomo);color:#fff}
+.stat-card{background:var(--asfalto);border:1px solid var(--plomo)}
+.stat-card .val{color:#fff;font-family:'Barlow Condensed',sans-serif}
+.mylist .row{background:var(--asfalto);border:1px solid var(--plomo)}
+.mylist .row h4{color:#fff}
+.st-badges .stbadge{background:var(--plomo);color:var(--grisc)}
+.overlay{background:rgba(0,0,0,.75)}
+.modal{background:var(--asfalto);border:1px solid var(--plomo);color:var(--titanio)}
+.modal h2{color:#fff;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+.modal input,.modal select,.modal textarea{background:#0f0f10;border:1px solid var(--plomo);color:var(--titanio)}
+.tabs button{color:var(--muted)}
+.tabs button.active{color:#fff;border-bottom-color:var(--rojo)}
+.type-opt{background:#0f0f10;border:1px solid var(--plomo)}
+.type-opt.sel{border-color:var(--rojo);background:rgba(232,0,29,.08)}
+.close-x{background:var(--plomo);color:var(--titanio)}
+footer.foot{background:var(--asfalto);border-top:2px solid var(--rojo);color:var(--muted)}
+.foot-col h5{color:var(--rojo);text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;letter-spacing:.1em}
+.foot-col a,.foot-grid a{color:var(--grisc)}
+.foot-col a:hover{color:#fff}
+.foot-bottom{border-top-color:var(--plomo);color:var(--muted)}
+.toast{background:var(--asfalto);border:1px solid var(--plomo);color:var(--titanio)}
+@media(max-width:900px){.hero h1{font-size:42px}.hero-bg{background:linear-gradient(to top,rgba(10,10,10,.92),rgba(10,10,10,.55)),url('https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=1200&q=80') center/cover}}
 </style>
 </head>
 <body>
@@ -345,7 +464,7 @@ footer.foot{background:#0f172a;color:#cbd5e1;padding:48px 0 24px;margin-top:20px
 <header class="top">
   <div class="container nav">
     <a class="logo" onclick="go('home')">
-      <span class="mark">◈</span>Merca<b>Coches</b>
+      <span class="mark" style="display:inline-block;width:5px;height:28px;background:var(--rojo);margin-right:8px"></span>MERCA<b>COCHES</b>
     </a>
     <nav class="nav-links">
       <a onclick="go('results')">Comprar</a>
@@ -371,11 +490,11 @@ footer.foot{background:#0f172a;color:#cbd5e1;padding:48px 0 24px;margin-top:20px
       </div>
       <div class="foot-col"><h5>Comprar</h5><a onclick="go('results')">Todos los coches</a><a onclick="quickBrand('BMW')">BMW</a><a onclick="quickBrand('Audi')">Audi</a><a onclick="quickBrand('Volkswagen')">Volkswagen</a></div>
       <div class="foot-col"><h5>Vender</h5><a onclick="go('publish')">Publicar anuncio</a><a onclick="go('dashboard')">Mi panel</a></div>
-      <div class="foot-col"><h5>MercaCoches</h5><a onclick="go('home')">Inicio</a><a onclick="toast('Página de ejemplo')">Sobre nosotros</a><a onclick="toast('Página de ejemplo')">Contacto</a><a onclick="toast('Página de ejemplo')">Ayuda</a></div>
+      <div class="foot-col"><h5>MercaCoches</h5><a onclick="go('home')">Inicio</a><a href="mailto:mart17yusef@gmail.com" style="text-decoration:none">Contacto</a><a href="/terminos" style="text-decoration:none">Normas de uso</a></div>
     </div>
     <div class="foot-bottom">
-      <span>© 2026 MercaCoches · Prototipo funcional</span>
-      <span>Aviso legal · Privacidad · Cookies</span>
+      <span>© 2026 MercaCoches · Compraventa de coches entre particulares y profesionales</span>
+      <span><a href="/aviso-legal" style="color:inherit">Aviso legal</a> · <a href="/terminos" style="color:inherit">Términos</a> · <a href="/privacidad" style="color:inherit">Privacidad</a> · <a href="/cookies" style="color:inherit">Cookies</a></span>
     </div>
   </div>
 </footer>
@@ -444,8 +563,8 @@ function toast(msg,type=''){const t=document.createElement('div');t.className='t
 async function go(page,scroll=true){
   closeMenu();
   const map={home:renderHome,results:renderResults,detail:renderDetail,publish:renderPublish,
-    dashboard:renderDashboard,pricing:renderPricing,favorites:renderFavorites,messages:renderMessages};
-  window.location.hash=page;
+    dashboard:renderDashboard,pricing:renderPricing,favorites:renderFavorites,messages:renderMessages,admin:renderAdmin};
+  window.location.hash=(page==='detail'&&currentDetail)?('car-'+currentDetail):page;
   try{ await (map[page]||renderHome)(); }
   catch(e){ toast(e.message||'Error','err'); }
   if(scroll)window.scrollTo({top:0,behavior:'instant'});
@@ -477,7 +596,8 @@ function toggleMenu(e){
   if(!mnu.classList.contains('hidden')){mnu.classList.add('hidden');return}
   mnu.innerHTML=`<div style="padding:10px 12px"><b>${me.name}</b><br><span style="font-size:13px;color:var(--muted)">${me.type==='pro'?'Concesionario':'Particular'} · Plan ${me.plan}</span></div><hr>
     <a onclick="go('dashboard')">▤ Mi panel</a><a onclick="go('publish')">＋ Publicar coche</a>
-    <a onclick="go('favorites')">♥ Favoritos (${favIds.size})</a><a onclick="go('messages')">✉ Mensajes</a>
+    <a onclick="go('favorites')">♥ Favoritos (${favIds.size})</a><a onclick="go('messages')">✉ Mensajes</a><a onclick="openMyAlerts()">🔔 Mis alertas</a>
+    ${me.role==='admin'?`<hr><a onclick="go('admin')" style="color:var(--danger);font-weight:700">⚙ Administración</a>`:''}
     <hr><a onclick="logout()">⏻ Cerrar sesión</a>`;
   mnu.classList.remove('hidden');
 }
@@ -502,7 +622,7 @@ function carCard(c){
         <span class="spec">${c.gear}</span><span class="spec">${c.power} CV</span>
       </div>
       <div class="car-foot">
-        <div class="price">${euro(c.price)}</div>
+        <div class="price">${euro(c.price)}${c.priceLabel==='good'?' <span style="background:#eafaf3;color:#0fa968;font-size:11px;font-weight:800;padding:2px 7px;border-radius:20px;vertical-align:middle">↓ Buen precio</span>':c.priceLabel==='fair'?' <span style="background:#eef4ff;color:#0a58ca;font-size:11px;font-weight:800;padding:2px 7px;border-radius:20px;vertical-align:middle">Precio justo</span>':''}</div>
         <div class="seller-mini">${c.owner&&c.owner.type==='pro'?'🏢':'👤'} ${c.owner?c.owner.name.split(' ')[0]:''}</div>
       </div>
     </div>
@@ -515,9 +635,24 @@ async function renderHome(){
   const featured=cars.filter(c=>c.featured).slice(0,4);
   const recent=[...cars].sort((a,b)=>b.created-a.created).slice(0,4);
   document.getElementById('app').innerHTML=`
-  <section class="hero"><div class="container">
-    <span class="badge-free">🎉 Publicar es 100% GRATIS · Sin comisiones</span>
-    <h1>Compra y vende coches sin pagar de más</h1>
+  <div class="ticker">
+    <div class="ticker-label">Novedades</div>
+    <div class="ticker-track">
+      <div class="ticker-item">Publicar tu coche es 100% gratis, sin comisiones ni cuotas</div>
+      <div class="ticker-item">Nuevo: crea alertas y te avisamos por email cuando entre tu coche ideal</div>
+      <div class="ticker-item">Etiqueta "Buen precio": sabemos si un anuncio está por debajo del mercado</div>
+      <div class="ticker-item">Concesionarios: sube todo tu stock sin pagar por anuncio</div>
+      <div class="ticker-item">Trato directo entre comprador y vendedor, sin intermediarios</div>
+      <div class="ticker-item">Publicar tu coche es 100% gratis, sin comisiones ni cuotas</div>
+      <div class="ticker-item">Nuevo: crea alertas y te avisamos por email cuando entre tu coche ideal</div>
+      <div class="ticker-item">Etiqueta "Buen precio": sabemos si un anuncio está por debajo del mercado</div>
+      <div class="ticker-item">Concesionarios: sube todo tu stock sin pagar por anuncio</div>
+      <div class="ticker-item">Trato directo entre comprador y vendedor, sin intermediarios</div>
+    </div>
+  </div>
+  <section class="hero"><div class="hero-bg"></div><div class="container">
+    <span class="badge-free">● Publicar es 100% GRATIS · Sin comisiones</span>
+    <h1>Compra y vende coches<br><em>sin pagar</em> de más</h1>
     <p class="sub">El portal donde los concesionarios y particulares publican gratis. Todo lo que necesitas para vender tu coche, sin las cuotas de siempre.</p>
     <div class="hero-stats">
       <div class="s"><b>${fmt(cars.length)}</b><span>coches publicados</span></div>
@@ -626,7 +761,7 @@ async function renderResults(){
     </aside>
     <div class="results-main">
       <div class="results-top"><div class="count">${total} coche${total!==1?'s':''} <span>encontrados</span></div>
-        <div class="sort-wrap"><span style="font-size:14px;color:var(--muted)">Ordenar:</span>
+        <div class="sort-wrap"><button class="btn btn-ghost btn-sm" onclick="openCreateAlert()" title="Recibe un email cuando se publique un coche que encaje con estos filtros">🔔 Crear alerta</button><span style="font-size:14px;color:var(--muted)">Ordenar:</span>
           <select onchange="setF('sort',this.value)">
             <option value="relevance">Relevancia</option>
             <option value="price-asc" ${f.sort==='price-asc'?'selected':''}>Precio ↑</option>
@@ -689,7 +824,7 @@ async function renderDetail(){
         ${similar.length?`<section class="block" style="padding-top:34px"><div class="section-head"><div><h2 style="font-size:22px">Coches similares</h2></div></div><div class="grid-cars">${similar.map(carCard).join('')}</div></section>`:''}
       </div>
       <div><div class="side-card">
-        <p class="big-price">${euro(c.price)}</p>
+        <p class="big-price">${euro(c.price)} ${c.priceLabel==='good'?'<span style="background:#eafaf3;color:#0fa968;font-size:14px;font-weight:800;padding:4px 12px;border-radius:20px;vertical-align:middle">↓ Buen precio</span>':c.priceLabel==='fair'?'<span style="background:#eef4ff;color:#0a58ca;font-size:14px;font-weight:800;padding:4px 12px;border-radius:20px;vertical-align:middle">Precio justo</span>':''}</p>
         <p class="fin">Precio al contado</p>
         <button class="btn btn-primary btn-block btn-lg" onclick="contactSeller(${c.id},'${(c.brand+' '+c.model).replace(/'/g,'')}')">✉ Contactar con el vendedor</button>
         <button class="btn btn-ghost btn-block" style="margin-top:10px" onclick="this.textContent='📞 '+${JSON.stringify(u.phone||'—')};this.disabled=true">📞 Ver teléfono</button>
@@ -725,16 +860,16 @@ function openAuth(mode){
   showModal(`
     <div class="tabs"><button class="${isLogin?'active':''}" onclick="openAuth('login')">Iniciar sesión</button><button class="${!isLogin?'active':''}" onclick="openAuth('register')">Crear cuenta</button></div>
     ${isLogin?`<h2>Bienvenido de nuevo</h2><p class="mp">Accede para gestionar tus anuncios</p>
-      <div class="form-row"><label>Email</label><input id="aEmail" type="email" value="ventas@autopremium.es"></div>
-      <div class="form-row"><label>Contraseña</label><input id="aPass" type="password" value="demo"></div>
+      <div class="form-row"><label>Email</label><input id="aEmail" type="email" placeholder="tu@email.com"></div>
+      <div class="form-row"><label>Contraseña</label><input id="aPass" type="password" placeholder="Tu contraseña"></div>
       <button class="btn btn-primary btn-block" onclick="doLogin()">Entrar</button>
-      <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:14px">Demo: ventas@autopremium.es / demo</p>`
+      <p style="text-align:center;font-size:13px;margin-top:14px"><a onclick="openForgot()" style="color:var(--brand);cursor:pointer">¿Has olvidado tu contraseña?</a></p>`
     :`<h2>Crea tu cuenta gratis</h2><p class="mp">Empieza a publicar coches sin coste</p>
       <div class="type-pick"><div class="type-opt sel" id="topt-private" onclick="pickType('private')"><div class="em">👤</div><b>Particular</b><span>Vendo mi coche</span></div><div class="type-opt" id="topt-pro" onclick="pickType('pro')"><div class="em">🏢</div><b>Profesional</b><span>Concesionario</span></div></div>
       <div class="form-row"><label id="nameLabel">Nombre completo</label><input id="rName" placeholder="Tu nombre"></div>
       <div class="form-row"><label>Email</label><input id="rEmail" type="email" placeholder="tu@email.com"></div>
       <div class="form-two"><div class="form-row"><label>Teléfono</label><input id="rPhone" placeholder="600 000 000"></div><div class="form-row"><label>Ciudad</label><input id="rCity" placeholder="Madrid"></div></div>
-      <div class="form-row"><label>Contraseña</label><input id="rPass" type="password" placeholder="Mínimo 4 caracteres"></div>
+      <div class="form-row"><label>Contraseña</label><input id="rPass" type="password" placeholder="Mínimo 6 caracteres"></div>
       <button class="btn btn-accent btn-block" onclick="doRegister()">Crear cuenta gratis</button>`}
   `);
   window._regType='private';
@@ -828,7 +963,7 @@ async function renderDashboard(){
   const totalViews=cars.reduce((s,c)=>s+c.views,0);
   const active=cars.filter(c=>c.status==='active').length;
   document.getElementById('app').innerHTML=`<div class="container"><div class="dash-layout">
-    <aside class="dash-side"><a class="active" onclick="go('dashboard')">▤ Mis anuncios</a><a onclick="go('publish')">＋ Publicar coche</a><a onclick="go('favorites')">♥ Favoritos</a><a onclick="go('messages')">✉ Mensajes ${threads.length?`(${threads.length})`:''}</a><a onclick="logout()">⏻ Cerrar sesión</a></aside>
+    <aside class="dash-side"><a class="active" onclick="go('dashboard')">▤ Mis anuncios</a><a onclick="go('publish')">＋ Publicar coche</a><a onclick="go('favorites')">♥ Favoritos</a><a onclick="openMyAlerts()">🔔 Mis alertas</a><a onclick="go('messages')">✉ Mensajes ${threads.length?`(${threads.length})`:''}</a><a onclick="logout()">⏻ Cerrar sesión</a></aside>
     <div>
       <div class="section-head"><div><h2>Hola, ${me.name.split(' ')[0]} 👋</h2><p>${me.type==='pro'?'Panel de concesionario':'Tu panel de vendedor'} · Plan ${me.plan}</p></div><button class="btn btn-accent" onclick="go('publish')">＋ Publicar coche</button></div>
       <div class="dash-stats">
@@ -869,65 +1004,4 @@ async function renderMessages(){
 function msgItem(t){
   return `<div class="msg-item ${t.id===activeThread?'active':''}" onclick="openThread(${t.id})">
     <span class="av">${initials(t.other&&t.other.name)}</span>
-    <div class="mi"><div class="top"><b>${t.other?t.other.name.split(' ')[0]:'Usuario'}</b><span class="time">${t.last?daysAgo(t.last.ts):''}</span></div>
-    <div style="font-size:12px;color:var(--muted)">${t.car?t.car.brand+' '+t.car.model:''}</div>
-    <div class="prev">${t.last?t.last.body:''}</div></div></div>`;
-}
-async function openThread(id){
-  activeThread=id;
-  const {messages}=await API('/threads/'+id);
-  const {threads}=await API('/threads');
-  const t=threads.find(x=>x.id===id)||{};
-  document.getElementById('msgList').innerHTML=threads.map(msgItem).join('');
-  document.getElementById('msgThread').innerHTML=`
-    <div class="th-head">${t.other?t.other.name:'Usuario'} · <span style="font-weight:400;color:var(--muted)">${t.car?t.car.brand+' '+t.car.model:''}</span></div>
-    <div class="th-body" id="thBody">${messages.map(m=>`<div class="bubble ${m.from===me.id?'out':'in'}">${m.txt}</div>`).join('')}</div>
-    <div class="th-input"><input id="thInput" placeholder="Escribe un mensaje…" onkeydown="if(event.key==='Enter')sendThread(${id})"><button class="btn btn-primary" onclick="sendThread(${id})">Enviar</button></div>`;
-  const b=document.getElementById('thBody');b.scrollTop=b.scrollHeight;
-}
-async function sendThread(id){
-  const inp=document.getElementById('thInput');const txt=inp.value.trim();if(!txt)return;
-  try{await API('/threads/'+id+'/messages',{method:'POST',body:{body:txt}});openThread(id)}catch(e){toast(e.message,'err')}
-}
-
-/* ---------- PRECIOS ---------- */
-async function renderPricing(){
-  document.getElementById('app').innerHTML=`<div class="container"><div class="pricing">
-    <div class="launch-banner"><b>🎉 Oferta de lanzamiento:</b> todos los planes son GRATIS durante la fase beta. Publica sin coste mientras hacemos crecer la comunidad.</div>
-    <div class="pricing-head"><h2>Planes pensados para vender más</h2><p>Empieza gratis. Cuando el portal esté lleno de compradores, ofreceremos planes premium opcionales. Los que llegan ahora, entran gratis.</p></div>
-    <div class="plans">
-      <div class="plan"><h3>Particular</h3><p class="pdesc">Para vender tu coche</p><div class="amount">0 €</div><div class="period">siempre gratis</div>
-        <ul><li><span class="ck">✓</span> Hasta 3 anuncios activos</li><li><span class="ck">✓</span> Fotos ilimitadas</li><li><span class="ck">✓</span> Mensajería con compradores</li><li><span class="ck">✓</span> Estadísticas de visitas</li><li class="off"><span>✕</span> Anuncios destacados</li></ul>
-        <button class="btn btn-ghost btn-block" onclick="go('publish')">Publicar gratis</button></div>
-      <div class="plan featured"><span class="pop">MÁS POPULAR</span><h3>Profesional</h3><p class="pdesc">Para concesionarios</p><div class="amount">0 €<small> ahora</small></div><div class="period">gratis en beta · luego desde 49 €/mes</div>
-        <ul><li><span class="ck">✓</span> <b>Anuncios ilimitados</b></li><li><span class="ck">✓</span> Ficha de concesionario</li><li><span class="ck">✓</span> Panel de gestión de stock</li><li><span class="ck">✓</span> Estadísticas avanzadas</li><li><span class="ck">✓</span> Soporte prioritario</li></ul>
-        <button class="btn btn-primary btn-block" onclick="startPro()">Empezar gratis</button></div>
-      <div class="plan"><h3>Premium</h3><p class="pdesc">Máxima visibilidad</p><div class="amount">0 €<small> ahora</small></div><div class="period">gratis en beta · luego desde 99 €/mes</div>
-        <ul><li><span class="ck">✓</span> Todo lo de Profesional</li><li><span class="ck">✓</span> Anuncios siempre destacados</li><li><span class="ck">✓</span> Aparición en portada</li><li><span class="ck">✓</span> Etiqueta verificado</li><li><span class="ck">✓</span> Gestor de cuenta dedicado</li></ul>
-        <button class="btn btn-ghost btn-block" onclick="startPro()">Empezar gratis</button></div>
-    </div>
-    <div class="value" style="margin-top:44px"><div><h2>¿Y cómo ganáis dinero si es gratis?</h2><p>Primero llenamos el portal de coches y compradores. Cuando aportemos valor real, ofreceremos servicios premium opcionales: destacados, publicidad y herramientas para grandes concesionarios.</p><button class="btn btn-accent btn-lg" onclick="go('publish')">Publicar mi coche</button></div>
-      <div class="cost-compare"><h3 style="margin:0 0 8px">Lo que te ahorras al año</h3><div class="row"><span>Portal líder (≈450 €/mes)</span><span class="them">5.400 €</span></div><div class="row"><span>Con MercaCoches</span><span class="us">0 €</span></div><div class="row"><span>Ahorro anual</span><span class="us">hasta 5.400 €</span></div></div>
-    </div>
-  </div></div>`;
-}
-async function startPro(){
-  if(!me){openAuth('register');return}
-  try{const {user}=await API('/auth/plan',{method:'POST',body:{plan:'Profesional'}});me=user;renderNav();toast('¡Plan Profesional activado gratis! 🎉','ok');go('dashboard');}catch(e){toast(e.message,'err')}
-}
-
-/* ---------- MODAL ---------- */
-function showModal(html,wide=false){closeModal();const o=document.createElement('div');o.className='overlay';o.id='overlay';o.onclick=e=>{if(e.target===o)closeModal()};o.innerHTML=`<div class="modal ${wide?'wide':''}"><button class="close-x" onclick="closeModal()">✕</button>${html}</div>`;document.body.appendChild(o);}
-function closeModal(){document.getElementById('overlay')?.remove()}
-
-/* ---------- INIT ---------- */
-window.addEventListener('load',async()=>{
-  await restoreSession();
-  renderNav();
-  const h=window.location.hash.replace('#','');
-  if(h&&['home','results','publish','dashboard','favorites','messages'].includes(h))go(h,false);
-  else renderHome();
-});
-</script>
-</body>
-</html>
+    <div class="mi"><div class="top"><b>${t.other?t.other.name.split(' ')[0]:'Usuario'}</b><span class="time">${t.last?daysAgo(t.las
