@@ -1004,4 +1004,204 @@ async function renderMessages(){
 function msgItem(t){
   return `<div class="msg-item ${t.id===activeThread?'active':''}" onclick="openThread(${t.id})">
     <span class="av">${initials(t.other&&t.other.name)}</span>
-    <div class="mi"><div class="top"><b>${t.other?t.other.name.split(' ')[0]:'Usuario'}</b><span class="time">${t.last?daysAgo(t.las
+    <div class="mi"><div class="top"><b>${t.other?t.other.name.split(' ')[0]:'Usuario'}</b><span class="time">${t.last?daysAgo(t.last.ts):''}</span></div>
+    <div style="font-size:12px;color:var(--muted)">${t.car?t.car.brand+' '+t.car.model:''}</div>
+    <div class="prev">${t.last?t.last.body:''}</div></div></div>`;
+}
+async function openThread(id){
+  activeThread=id;
+  const {messages}=await API('/threads/'+id);
+  const {threads}=await API('/threads');
+  const t=threads.find(x=>x.id===id)||{};
+  document.getElementById('msgList').innerHTML=threads.map(msgItem).join('');
+  document.getElementById('msgThread').innerHTML=`
+    <div class="th-head">${t.other?t.other.name:'Usuario'} · <span style="font-weight:400;color:var(--muted)">${t.car?t.car.brand+' '+t.car.model:''}</span></div>
+    <div class="th-body" id="thBody">${messages.map(m=>`<div class="bubble ${m.from===me.id?'out':'in'}">${m.txt}</div>`).join('')}</div>
+    <div class="th-input"><input id="thInput" placeholder="Escribe un mensaje…" onkeydown="if(event.key==='Enter')sendThread(${id})"><button class="btn btn-primary" onclick="sendThread(${id})">Enviar</button></div>`;
+  const b=document.getElementById('thBody');b.scrollTop=b.scrollHeight;
+}
+async function sendThread(id){
+  const inp=document.getElementById('thInput');const txt=inp.value.trim();if(!txt)return;
+  try{await API('/threads/'+id+'/messages',{method:'POST',body:{body:txt}});openThread(id)}catch(e){toast(e.message,'err')}
+}
+
+/* ---------- PRECIOS ---------- */
+async function renderPricing(){
+  document.getElementById('app').innerHTML=`<div class="container"><div class="pricing">
+    <div class="launch-banner"><b>🎉 Oferta de lanzamiento:</b> todos los planes son GRATIS durante la fase beta. Publica sin coste mientras hacemos crecer la comunidad.</div>
+    <div class="pricing-head"><h2>Planes pensados para vender más</h2><p>Empieza gratis. Cuando el portal esté lleno de compradores, ofreceremos planes premium opcionales. Los que llegan ahora, entran gratis.</p></div>
+    <div class="plans">
+      <div class="plan"><h3>Particular</h3><p class="pdesc">Para vender tu coche</p><div class="amount">0 €</div><div class="period">siempre gratis</div>
+        <ul><li><span class="ck">✓</span> Hasta 3 anuncios activos</li><li><span class="ck">✓</span> Fotos ilimitadas</li><li><span class="ck">✓</span> Mensajería con compradores</li><li><span class="ck">✓</span> Estadísticas de visitas</li><li class="off"><span>✕</span> Anuncios destacados</li></ul>
+        <button class="btn btn-ghost btn-block" onclick="go('publish')">Publicar gratis</button></div>
+      <div class="plan featured"><span class="pop">MÁS POPULAR</span><h3>Profesional</h3><p class="pdesc">Para concesionarios</p><div class="amount">0 €<small> ahora</small></div><div class="period">gratis en beta · luego desde 49 €/mes</div>
+        <ul><li><span class="ck">✓</span> <b>Anuncios ilimitados</b></li><li><span class="ck">✓</span> Ficha de concesionario</li><li><span class="ck">✓</span> Panel de gestión de stock</li><li><span class="ck">✓</span> Estadísticas avanzadas</li><li><span class="ck">✓</span> Soporte prioritario</li></ul>
+        <button class="btn btn-primary btn-block" onclick="startPro()">Empezar gratis</button></div>
+      <div class="plan"><h3>Premium</h3><p class="pdesc">Máxima visibilidad</p><div class="amount">0 €<small> ahora</small></div><div class="period">gratis en beta · luego desde 99 €/mes</div>
+        <ul><li><span class="ck">✓</span> Todo lo de Profesional</li><li><span class="ck">✓</span> Anuncios siempre destacados</li><li><span class="ck">✓</span> Aparición en portada</li><li><span class="ck">✓</span> Etiqueta verificado</li><li><span class="ck">✓</span> Gestor de cuenta dedicado</li></ul>
+        <button class="btn btn-ghost btn-block" onclick="startPro()">Empezar gratis</button></div>
+    </div>
+    <div class="value" style="margin-top:44px"><div><h2>¿Y cómo ganáis dinero si es gratis?</h2><p>Primero llenamos el portal de coches y compradores. Cuando aportemos valor real, ofreceremos servicios premium opcionales: destacados, publicidad y herramientas para grandes concesionarios.</p><button class="btn btn-accent btn-lg" onclick="go('publish')">Publicar mi coche</button></div>
+      <div class="cost-compare"><h3 style="margin:0 0 8px">Lo que te ahorras al año</h3><div class="row"><span>Portal líder (≈450 €/mes)</span><span class="them">5.400 €</span></div><div class="row"><span>Con MercaCoches</span><span class="us">0 €</span></div><div class="row"><span>Ahorro anual</span><span class="us">hasta 5.400 €</span></div></div>
+    </div>
+  </div></div>`;
+}
+async function startPro(){
+  if(!me){openAuth('register');return}
+  try{const {user}=await API('/auth/plan',{method:'POST',body:{plan:'Profesional'}});me=user;renderNav();toast('¡Plan Profesional activado gratis! 🎉','ok');go('dashboard');}catch(e){toast(e.message,'err')}
+}
+
+/* ---------- MODAL ---------- */
+function showModal(html,wide=false){closeModal();const o=document.createElement('div');o.className='overlay';o.id='overlay';o.onclick=e=>{if(e.target===o)closeModal()};o.innerHTML=`<div class="modal ${wide?'wide':''}"><button class="close-x" onclick="closeModal()">✕</button>${html}</div>`;document.body.appendChild(o);}
+function closeModal(){document.getElementById('overlay')?.remove()}
+
+/* ---------- INIT ---------- */
+window.addEventListener('load',async()=>{
+  await restoreSession();
+  renderNav();
+  initCookieBanner();
+  const h=window.location.hash.replace('#','');
+  let mm;
+  if((mm=h.match(/^car-(\d+)$/))){currentDetail=+mm[1];go('detail',false);}
+  else if((mm=h.match(/^reset=(.+)$/))){openReset(mm[1]);renderHome();}
+  else if(h==='verificado'){renderHome();setTimeout(()=>toast('✅ Email verificado. ¡Gracias!','ok'),400);}
+  else if(h&&['home','results','publish','dashboard','favorites','messages','admin'].includes(h))go(h,false);
+  else renderHome();
+});
+
+
+/* ---------- ALERTAS DE BÚSQUEDA ---------- */
+function alertNameFromFilters(f){
+  const parts=[];
+  if(f.brand)parts.push(f.brand+(f.model?' '+f.model:''));
+  else if(f.q)parts.push('"'+f.q+'"');
+  else parts.push('Cualquier coche');
+  if(f.priceMax)parts.push('hasta '+fmt(+f.priceMax)+' €');
+  if(f.yearMin)parts.push('desde '+f.yearMin);
+  if(f.kmMax)parts.push('máx '+fmt(+f.kmMax)+' km');
+  if(f.province)parts.push('en '+f.province);
+  return parts.join(' · ');
+}
+function openCreateAlert(){
+  if(!me){openAuth('login');toast('Inicia sesión para crear alertas','err');return}
+  const name=alertNameFromFilters(filters);
+  showModal(`<h2>🔔 Crear alerta</h2><p class="mp">Te enviaremos un email cuando se publique un coche que encaje con tu búsqueda actual.</p>
+    <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:14px;font-size:14px"><b>Tu búsqueda:</b><br>${name}</div>
+    <div class="form-row"><label>Nombre de la alerta (opcional)</label><input id="alName" placeholder="${name}"></div>
+    <button class="btn btn-accent btn-block" onclick="doCreateAlert()">Activar alerta</button>`);
+}
+async function doCreateAlert(){
+  try{ await API('/alerts',{method:'POST',body:{name:document.getElementById('alName').value,query:filters}});
+    closeModal();toast('Alerta creada. Te avisaremos por email 🔔','ok');
+  }catch(e){toast(e.message,'err')}
+}
+async function openMyAlerts(){
+  if(!me){openAuth('login');return}
+  closeMenu();
+  const {alerts}=await API('/alerts');
+  showModal(`<h2>🔔 Mis alertas</h2><p class="mp">Recibes un email cuando se publica un coche que encaja.</p>
+    ${alerts.length?alerts.map(a=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+      <div style="font-size:14px"><b>${a.name}</b><br><span style="color:var(--muted);font-size:12px">${a.notified?a.notified+' aviso'+(a.notified!==1?'s':'')+' enviado'+(a.notified!==1?'s':''):'Sin avisos aún'}</span></div>
+      <button class="btn btn-danger btn-sm" onclick="delAlert(${a.id})">Borrar</button></div>`).join('')
+    :`<div style="text-align:center;padding:20px;color:var(--muted)">No tienes alertas.<br>Créalas desde una búsqueda con el botón <b>🔔 Crear alerta</b>.</div>
+     <button class="btn btn-primary btn-block" onclick="closeModal();go('results')">Ir a buscar coches</button>`}`,true);
+}
+async function delAlert(id){
+  try{ await API('/alerts/'+id,{method:'DELETE'});toast('Alerta borrada');openMyAlerts(); }
+  catch(e){toast(e.message,'err')}
+}
+
+/* ---------- RECUPERAR CONTRASEÑA ---------- */
+function openForgot(){
+  showModal(`<h2>Recuperar contraseña</h2><p class="mp">Te enviaremos un enlace para crear una nueva.</p>
+    <div class="form-row"><label>Email de tu cuenta</label><input id="fEmail" type="email" placeholder="tu@email.com"></div>
+    <button class="btn btn-primary btn-block" onclick="doForgot()">Enviarme el enlace</button>`);
+}
+async function doForgot(){
+  try{ const r=await API('/auth/forgot',{method:'POST',auth:false,body:{email:document.getElementById('fEmail').value}});
+    closeModal();toast(r.msg||'Enlace enviado si el email existe','ok');
+  }catch(e){toast(e.message,'err')}
+}
+function openReset(tok){
+  showModal(`<h2>Nueva contraseña</h2><p class="mp">Escribe tu contraseña nueva.</p>
+    <div class="form-row"><label>Contraseña nueva</label><input id="nPass" type="password" placeholder="Mínimo 6 caracteres"></div>
+    <div class="form-row"><label>Repítela</label><input id="nPass2" type="password"></div>
+    <button class="btn btn-primary btn-block" onclick="doReset('${tok}')">Guardar y entrar</button>`);
+}
+async function doReset(tok){
+  const p1=document.getElementById('nPass').value,p2=document.getElementById('nPass2').value;
+  if(p1!==p2){toast('Las contraseñas no coinciden','err');return}
+  try{ const {token:tk,user}=await API('/auth/reset',{method:'POST',auth:false,body:{token:tok,pass:p1}});
+    token=tk;localStorage.setItem('al_token',tk);me=user;await loadFavs();closeModal();renderNav();
+    history.replaceState(null,'','/#home');toast('Contraseña cambiada. ¡Bienvenido de nuevo! 👋','ok');go('dashboard');
+  }catch(e){toast(e.message,'err')}
+}
+
+/* ---------- ADMINISTRACIÓN ---------- */
+async function renderAdmin(){
+  if(!me||me.role!=='admin'){toast('Solo administradores','err');go('home');return}
+  const st=await API('/admin/stats');
+  const box=(n,l)=>`<div style="background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:18px;text-align:center"><div style="font-size:26px;font-weight:800;color:var(--brand)">${fmt(n)}</div><div style="font-size:13px;color:var(--muted)">${l}</div></div>`;
+  document.getElementById('app').innerHTML=`<div class="container"><section class="block">
+    <div class="section-head"><div><h2>⚙ Administración</h2><p>Gestión de usuarios y anuncios</p></div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px">
+      ${box(st.users,'Usuarios')}${box(st.usersPro,'Profesionales')}${box(st.usersBanned,'Suspendidos')}
+      ${box(st.carsActive,'Anuncios activos')}${box(st.cars,'Anuncios totales')}${box(st.messages,'Mensajes')}
+      ${box(st.views,'Visitas a anuncios')}${box(st.avgPrice+' €','Precio medio')}
+    </div>
+    <div class="tabs" style="margin-bottom:14px"><button class="active" id="admTabU" onclick="admTab('users')">Usuarios</button><button id="admTabC" onclick="admTab('cars')">Anuncios</button></div>
+    <input id="admSearch" placeholder="Buscar..." style="width:100%;max-width:340px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;margin-bottom:14px" oninput="admRefresh()">
+    <div id="admBody"></div>
+  </section></div>`;
+  window._admTab='users';admRefresh();
+}
+function admTab(t){window._admTab=t;document.getElementById('admTabU').classList.toggle('active',t==='users');document.getElementById('admTabC').classList.toggle('active',t==='cars');admRefresh()}
+async function admRefresh(){
+  const q=encodeURIComponent(document.getElementById('admSearch')?.value||'');
+  const el=document.getElementById('admBody');if(!el)return;
+  const td='padding:9px 10px;border-bottom:1px solid var(--line);font-size:14px;text-align:left';
+  if(window._admTab==='users'){
+    const {users}=await API('/admin/users?q='+q);
+    el.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;box-shadow:var(--shadow)">
+      <tr><th style="${td}">Usuario</th><th style="${td}">Tipo</th><th style="${td}">Anuncios</th><th style="${td}">Estado</th><th style="${td}">Acciones</th></tr>
+      ${users.map(u=>`<tr>
+        <td style="${td}"><b>${u.name}</b><br><span style="color:var(--muted);font-size:12px">${u.email}${u.verified?' ✓':''}</span></td>
+        <td style="${td}">${u.type==='pro'?'🏢 Pro':'👤 Particular'}${u.role==='admin'?' · <b>admin</b>':''}</td>
+        <td style="${td}">${u.cars}</td>
+        <td style="${td}">${u.banned?'<span style="color:var(--danger);font-weight:700">Suspendido</span>':'Activo'}</td>
+        <td style="${td}">${u.role==='admin'?'—':`<button class="btn btn-ghost btn-sm" onclick="admBan(${u.id})">${u.banned?'Reactivar':'Suspender'}</button> <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="admDelUser(${u.id})">Borrar</button>`}</td>
+      </tr>`).join('')}</table></div>`;
+  }else{
+    const {cars}=await API('/admin/cars?q='+q);
+    el.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;box-shadow:var(--shadow)">
+      <tr><th style="${td}">Anuncio</th><th style="${td}">Precio</th><th style="${td}">Vendedor</th><th style="${td}">Estado</th><th style="${td}">Visitas</th><th style="${td}">Acciones</th></tr>
+      ${cars.map(c=>`<tr>
+        <td style="${td}"><a onclick="openDetail(${c.id})" style="cursor:pointer;color:var(--brand);font-weight:700">${c.brand} ${c.model} ${c.year}</a></td>
+        <td style="${td}">${euro(c.price)}</td>
+        <td style="${td}">${c.owner.name||'—'}</td>
+        <td style="${td}">${c.status==='active'?'Activo':'Pausado'}${c.featured?' · ★':''}</td>
+        <td style="${td}">${fmt(c.views)}</td>
+        <td style="${td}"><button class="btn btn-ghost btn-sm" onclick="admToggleCar(${c.id})">${c.status==='active'?'Pausar':'Activar'}</button> <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="admDelCar(${c.id})">Borrar</button></td>
+      </tr>`).join('')}</table></div>`;
+  }
+}
+async function admBan(id){try{await API('/admin/users/'+id+'/ban',{method:'POST'});toast('Hecho','ok');admRefresh()}catch(e){toast(e.message,'err')}}
+async function admDelUser(id){if(!confirm('¿Borrar este usuario y todos sus anuncios? No se puede deshacer.'))return;try{await API('/admin/users/'+id,{method:'DELETE'});toast('Usuario borrado','ok');admRefresh()}catch(e){toast(e.message,'err')}}
+async function admToggleCar(id){try{await API('/cars/'+id+'/status',{method:'POST'});toast('Hecho','ok');admRefresh()}catch(e){toast(e.message,'err')}}
+async function admDelCar(id){if(!confirm('¿Borrar este anuncio?'))return;try{await API('/cars/'+id,{method:'DELETE'});toast('Anuncio borrado','ok');admRefresh()}catch(e){toast(e.message,'err')}}
+
+/* ---------- AVISO DE COOKIES ---------- */
+function initCookieBanner(){
+  let c=null;try{c=localStorage.getItem('mc_cookies')}catch(e){}
+  if(c)return;
+  const d=document.createElement('div');d.id='ckb';
+  d.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:3000;background:#1C1C1E;color:#e8eef6;padding:14px 18px;border-top:2px solid #E8001D;box-shadow:0 -4px 20px rgba(0,0,0,.5)';
+  d.innerHTML=`<div style="max-width:1200px;margin:0 auto;display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:space-between">
+    <p style="font-size:13px;margin:0;flex:1;min-width:240px">Usamos almacenamiento esencial para tu sesión y preferencias. No usamos cookies publicitarias. Más info en la <a href="/cookies" style="color:#ff6b6b">Política de cookies</a>.</p>
+    <button onclick="ckOk()" style="background:#E8001D;color:#fff;border:none;border-radius:6px;padding:9px 18px;font-weight:800;cursor:pointer;font-family:inherit">Entendido</button></div>`;
+  document.body.appendChild(d);
+}
+function ckOk(){try{localStorage.setItem('mc_cookies','ok')}catch(e){}document.getElementById('ckb')?.remove()}
+</script>
+</body>
+</html>
