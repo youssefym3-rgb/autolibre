@@ -1,0 +1,488 @@
+[f]};go('results')}
+function quickBody(b){filters={bodies:[b]};go('results')}
+function quickPrice(p){filters={priceMax:p};go('results')}
+
+/* ---------- RESULTADOS ---------- */
+function buildQuery(){
+  const p=new URLSearchParams();
+  for(const k in filters){const v=filters[k];if(v==null||v==='')continue;if(Array.isArray(v)){if(v.length)p.set(k,v.join(','))}else p.set(k,v)}
+  return p.toString();
+}
+async function renderResults(){
+  const {cars,total}=await API('/cars?'+buildQuery(),{auth:false});
+  const f=filters;
+  document.getElementById('app').innerHTML=`<div class="container"><div class="results-layout">
+    <aside class="filters">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><h4>Filtros</h4><span class="clear" onclick="clearFilters()">Limpiar</span></div>
+      <div class="filter-group"><label>Buscar</label><input id="fq" placeholder="Marca o modelo…" value="${f.q||''}" oninput="setF('q',this.value)"></div>
+      <div class="filter-group"><label>Marca</label>
+        <select id="fBrand" onchange="setF('brand',this.value);fillFModels()"><option value="">Todas</option>${Object.keys(BRANDS).map(b=>`<option ${f.brand===b?'selected':''}>${b}</option>`).join('')}</select>
+        <label>Modelo</label><select id="fModel" onchange="setF('model',this.value)"><option value="">Todos</option></select></div>
+      <div class="filter-group"><label>Precio (€)</label><div class="range-row"><input type="number" placeholder="Mín" value="${f.priceMin||''}" oninput="setF('priceMin',this.value)"><input type="number" placeholder="Máx" value="${f.priceMax||''}" oninput="setF('priceMax',this.value)"></div></div>
+      <div class="filter-group"><label>Año</label><div class="range-row">
+        <select onchange="setF('yearMin',this.value)"><option value="">Desde</option>${Array.from({length:20},(_,i)=>2026-i).map(y=>`<option ${+f.yearMin===y?'selected':''}>${y}</option>`).join('')}</select>
+        <select onchange="setF('yearMax',this.value)"><option value="">Hasta</option>${Array.from({length:20},(_,i)=>2026-i).map(y=>`<option ${+f.yearMax===y?'selected':''}>${y}</option>`).join('')}</select></div></div>
+      <div class="filter-group"><label>Kilómetros máximos</label><select onchange="setF('kmMax',this.value)"><option value="">Cualquiera</option>${[10000,20000,50000,80000,120000,160000,200000].map(k=>`<option value="${k}" ${+f.kmMax===k?'selected':''}>${fmt(k)} km</option>`).join('')}</select></div>
+      <div class="filter-group"><label>Potencia (CV)</label><div class="range-row"><input type="number" placeholder="Mín" value="${f.powerMin||''}" oninput="setF('powerMin',this.value)"><input type="number" placeholder="Máx" value="${f.powerMax||''}" oninput="setF('powerMax',this.value)"></div></div>
+      <div class="filter-group"><label>Combustible</label><div class="checks">${FUELS.map(x=>`<label><input type="checkbox" ${(f.fuels||[]).includes(x)?'checked':''} onchange="toggleArr('fuels','${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Cambio</label><div class="checks">${GEARS.map(x=>`<label><input type="checkbox" ${(f.gears||[]).includes(x)?'checked':''} onchange="toggleArr('gears','${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Carrocería</label><div class="checks">${BODIES.map(x=>`<label><input type="checkbox" ${(f.bodies||[]).includes(x)?'checked':''} onchange="toggleArr('bodies','${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Distintivo ambiental</label><div class="checks">${ENV_LABELS.map(x=>`<label><input type="checkbox" ${(f.envs||[]).includes(x)?'checked':''} onchange="toggleArr('envs','${x}')"> <span class="env-tag" style="background:${ENV_COLORS[x]}">${x}</span> Etiqueta ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Color</label><div class="checks">${COLORS.map(x=>`<label><input type="checkbox" ${(f.colors||[]).includes(x)?'checked':''} onchange="toggleArr('colors','${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Puertas</label><div class="checks" style="flex-direction:row;flex-wrap:wrap;gap:14px">${DOORS.map(x=>`<label><input type="checkbox" ${(f.doors||[]).includes(String(x))?'checked':''} onchange="toggleArr('doors','${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Plazas</label><div class="checks" style="flex-direction:row;flex-wrap:wrap;gap:14px">${SEATS.map(x=>`<label><input type="checkbox" ${(f.seats||[]).includes(String(x))?'checked':''} onchange="toggleArr('seats','${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Tipo de vendedor</label><div class="checks">${SELLER_TYPES.map(x=>`<label><input type="checkbox" ${(f.sellerTypes||[]).includes(x[0])?'checked':''} onchange="toggleArr('sellerTypes','${x[0]}')"> ${x[1]}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Provincia</label><select onchange="setF('province',this.value)"><option value="">Toda España</option>${PROVINCES.map(p=>`<option ${f.province===p?'selected':''}>${p}</option>`).join('')}</select></div>
+      <div class="filter-group"><label>Equipamiento y extras</label><div class="checks" style="max-height:200px">${EXTRAS.map(x=>`<label><input type="checkbox" ${(f.extras||[]).includes(x)?'checked':''} onchange="toggleArr('extras','${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="filter-group"><label>Otros</label><div class="checks">
+        <label><input type="checkbox" ${f.withPhotos?'checked':''} onchange="toggleBool('withPhotos')"> Solo con fotos</label>
+        <label><input type="checkbox" ${f.certified?'checked':''} onchange="toggleBool('certified')"> Certificado</label>
+        <label><input type="checkbox" ${f.warranty?'checked':''} onchange="toggleBool('warranty')"> Con garantía</label>
+        <label><input type="checkbox" ${f.noAccidents?'checked':''} onchange="toggleBool('noAccidents')"> Sin accidentes</label></div></div>
+    </aside>
+    <div class="results-main">
+      <div class="results-top"><div class="count">${total} coche${total!==1?'s':''} <span>encontrados</span></div>
+        <div class="sort-wrap"><button class="btn btn-ghost btn-sm" onclick="openCreateAlert()" title="Recibe un email cuando se publique un coche que encaje con estos filtros">🔔 Crear alerta</button><span style="font-size:14px;color:var(--muted)">Ordenar:</span>
+          <select onchange="setF('sort',this.value)">
+            <option value="relevance">Relevancia</option>
+            <option value="price-asc" ${f.sort==='price-asc'?'selected':''}>Precio ↑</option>
+            <option value="price-desc" ${f.sort==='price-desc'?'selected':''}>Precio ↓</option>
+            <option value="km-asc" ${f.sort==='km-asc'?'selected':''}>Menos km</option>
+            <option value="year-desc" ${f.sort==='year-desc'?'selected':''}>Más nuevos</option>
+            <option value="recent" ${f.sort==='recent'?'selected':''}>Más recientes</option>
+          </select></div></div>
+      ${cars.length?`<div class="grid-results">${cars.map(carCard).join('')}</div>`:`<div class="empty-state"><div class="em">🔍</div><h3>No hay coches con estos filtros</h3><button class="btn btn-primary" onclick="clearFilters()">Limpiar filtros</button></div>`}
+    </div>
+  </div></div>`;
+  fillFModels();
+}
+function setF(k,v){if(v===''||v==null)delete filters[k];else filters[k]=v;renderResults()}
+function toggleArr(k,v){filters[k]=filters[k]||[];v=String(v);const i=filters[k].indexOf(v);if(i>=0)filters[k].splice(i,1);else filters[k].push(v);renderResults()}
+function toggleBool(k){if(filters[k])delete filters[k];else filters[k]=true;renderResults()}
+function clearFilters(){filters={};renderResults()}
+function fillFModels(){const b=filters.brand;const m=document.getElementById('fModel');if(!m)return;m.innerHTML='<option value="">Todos</option>'+(b&&BRANDS[b]?BRANDS[b].map(x=>`<option ${filters.model===x?'selected':''}>${x}</option>`).join(''):'')}
+
+/* ---------- DETALLE ---------- */
+function openDetail(id){currentDetail=id;go('detail')}
+async function renderDetail(){
+  const {car:c}=await API('/cars/'+currentDetail,{auth:false});
+  let similar=[];try{const r=await API('/cars?bodies='+encodeURIComponent(c.body),{auth:false});similar=r.cars.filter(x=>x.id!==c.id).slice(0,4);}catch(e){}
+  const u=c.owner||{};
+  const photos=c.photos||[];
+  const mainImg=photos.length?`<img src="${photos[0]}" id="mainImg" style="width:100%;height:100%;object-fit:cover">`:`<div class="placeholder">🚗</div>`;
+  const thumbs=(photos.length?photos:[0,1,2,3,4]).map((p,i)=>photos.length?`<div class="t ${i===0?'active':''}" onclick="swapImg('${p}',this)"><img src="${p}" style="width:100%;height:100%;object-fit:cover"></div>`:`<div class="t"><div class="placeholder">📷</div></div>`).join('');
+  document.getElementById('app').innerHTML=`<div class="container">
+    <div class="detail-crumbs"><a onclick="go('home')">Inicio</a> › <a onclick="quickBrand('${c.brand}')">${c.brand}</a> › ${c.model}</div>
+    <div class="detail-layout">
+      <div>
+        <div class="gallery"><div class="main-img">${mainImg}</div><div class="thumbs">${thumbs}</div></div>
+        <div class="detail-desc">
+          <h3>${c.brand} ${c.model} ${c.year}</h3>
+          <p style="color:var(--muted);margin-top:-6px">Publicado ${daysAgo(c.created)} · ${c.views} visitas · Ref. ${c.id}</p>
+          <div class="specs-table">
+            <div class="st"><span>Año</span><b>${c.year}</b></div>
+            <div class="st"><span>Kilómetros</span><b>${fmt(c.km)} km</b></div>
+            <div class="st"><span>Combustible</span><b>${c.fuel}</b></div>
+            <div class="st"><span>Cambio</span><b>${c.gear}</b></div>
+            <div class="st"><span>Potencia</span><b>${c.power} CV</b></div>
+            <div class="st"><span>Carrocería</span><b>${c.body}</b></div>
+            <div class="st"><span>Puertas</span><b>${c.doors}</b></div>
+            <div class="st"><span>Plazas</span><b>${c.seats}</b></div>
+            <div class="st"><span>Color</span><b>${c.color}</b></div>
+            <div class="st"><span>Ubicación</span><b>${c.province}</b></div>
+            <div class="st"><span>Distintivo ambiental</span><b>${c.env?`<span class="env-tag" style="background:${ENV_COLORS[c.env]}">${c.env}</span> Etiqueta ${c.env}`:'—'}</b></div>
+            <div class="st"><span>Vendedor</span><b>${(c.sellerType||u.type)==='pro'?'Profesional':'Particular'}</b></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+            ${c.noAccidents?'<span class="stbadge active">✓ Sin accidentes</span>':''}
+            ${c.warranty?'<span class="stbadge active">✓ Con garantía</span>':''}
+            ${c.certified?'<span class="stbadge active">✓ Certificado</span>':''}
+          </div>
+          <h3 style="margin-top:26px">Descripción</h3>
+          <p style="color:#374151">${c.desc}</p>
+          ${c.extras&&c.extras.length?`<h3 style="margin-top:26px">Equipamiento y extras</h3><div style="display:flex;gap:8px;flex-wrap:wrap">${c.extras.map(e=>`<span class="spec" style="font-size:13px">✓ ${e}</span>`).join('')}</div>`:''}
+        </div>
+        ${similar.length?`<section class="block" style="padding-top:34px"><div class="section-head"><div><h2 style="font-size:22px">Coches similares</h2></div></div><div class="grid-cars">${similar.map(carCard).join('')}</div></section>`:''}
+      </div>
+      <div><div class="side-card">
+        <p class="big-price">${euro(c.price)} ${c.priceLabel==='good'?'<span style="background:#eafaf3;color:#0fa968;font-size:14px;font-weight:800;padding:4px 12px;border-radius:20px;vertical-align:middle">↓ Buen precio</span>':c.priceLabel==='fair'?'<span style="background:#eef4ff;color:#0a58ca;font-size:14px;font-weight:800;padding:4px 12px;border-radius:20px;vertical-align:middle">Precio justo</span>':''}</p>
+        <p class="fin">Precio al contado</p>
+        <button class="btn btn-primary btn-block btn-lg" onclick="contactSeller(${c.id},'${(c.brand+' '+c.model).replace(/'/g,'')}')">✉ Contactar con el vendedor</button>
+        <button class="btn btn-ghost btn-block" style="margin-top:10px" onclick="this.textContent='📞 '+${JSON.stringify(u.phone||'—')};this.disabled=true">📞 Ver teléfono</button>
+        <button class="btn ${isFav(c.id)?'btn-danger':'btn-ghost'} btn-block" style="margin-top:10px" onclick="toggleFav(${c.id})">${isFav(c.id)?'♥ Guardado en favoritos':'♡ Guardar en favoritos'}</button>
+        <div class="seller-box"><div class="sname"><span class="sav">${initials(u.name)}</span><div>${u.name||'Vendedor'}<div class="stype">${u.type==='pro'?'🏢 Concesionario profesional':'👤 Particular'} · ${u.city||''}</div></div></div></div>
+        <p style="font-size:12px;color:var(--muted);text-align:center">Trato directo entre comprador y vendedor. Precio al contado.</p>
+      </div></div>
+    </div></div>`;
+}
+function swapImg(src,el){document.getElementById('mainImg').src=src;document.querySelectorAll('.thumbs .t').forEach(t=>t.classList.remove('active'));el.classList.add('active')}
+
+/* ---------- FAVORITOS ---------- */
+async function toggleFav(id){
+  if(!me){openAuth('login');toast('Inicia sesión para guardar favoritos','err');return}
+  try{ const {fav}=await API('/favorites/'+id,{method:'POST'});
+    if(fav){favIds.add(+id);toast('Guardado en favoritos ♥','ok')}else{favIds.delete(+id);toast('Quitado de favoritos')}
+    const page=window.location.hash.replace('#','');
+    if(['results','home','favorites','detail'].includes(page))go(page,false);
+  }catch(e){toast(e.message,'err')}
+}
+async function renderFavorites(){
+  if(!me){openAuth('login');return}
+  const {cars}=await API('/favorites');
+  document.getElementById('app').innerHTML=`<div class="container"><section class="block">
+    <div class="section-head"><div><h2>Mis favoritos</h2><p>${cars.length} coche${cars.length!==1?'s':''} guardado${cars.length!==1?'s':''}</p></div></div>
+    ${cars.length?`<div class="grid-cars">${cars.map(carCard).join('')}</div>`:`<div class="empty-state"><div class="em">♡</div><h3>Aún no tienes favoritos</h3><button class="btn btn-primary" onclick="go('results')">Explorar coches</button></div>`}
+  </section></div>`;
+}
+
+/* ---------- AUTH ---------- */
+function openAuth(mode){
+  const isLogin=mode==='login';
+  showModal(`
+    <div class="tabs"><button class="${isLogin?'active':''}" onclick="openAuth('login')">Iniciar sesión</button><button class="${!isLogin?'active':''}" onclick="openAuth('register')">Crear cuenta</button></div>
+    ${isLogin?`<h2>Bienvenido de nuevo</h2><p class="mp">Accede para gestionar tus anuncios</p>
+      <div class="form-row"><label>Email</label><input id="aEmail" type="email" placeholder="tu@email.com"></div>
+      <div class="form-row"><label>Contraseña</label><input id="aPass" type="password" placeholder="Tu contraseña"></div>
+      <button class="btn btn-primary btn-block" onclick="doLogin()">Entrar</button>
+      <p style="text-align:center;font-size:13px;margin-top:14px"><a onclick="openForgot()" style="color:var(--brand);cursor:pointer">¿Has olvidado tu contraseña?</a></p>`
+    :`<h2>Crea tu cuenta gratis</h2><p class="mp">Empieza a publicar coches sin coste</p>
+      <div class="type-pick"><div class="type-opt sel" id="topt-private" onclick="pickType('private')"><div class="em">👤</div><b>Particular</b><span>Vendo mi coche</span></div><div class="type-opt" id="topt-pro" onclick="pickType('pro')"><div class="em">🏢</div><b>Profesional</b><span>Concesionario</span></div></div>
+      <div class="form-row"><label id="nameLabel">Nombre completo</label><input id="rName" placeholder="Tu nombre"></div>
+      <div class="form-row"><label>Email</label><input id="rEmail" type="email" placeholder="tu@email.com"></div>
+      <div class="form-two"><div class="form-row"><label>Teléfono</label><input id="rPhone" placeholder="600 000 000"></div><div class="form-row"><label>Ciudad</label><input id="rCity" placeholder="Madrid"></div></div>
+      <div class="form-row"><label>Contraseña</label><input id="rPass" type="password" placeholder="Mínimo 6 caracteres"></div>
+      <button class="btn btn-accent btn-block" onclick="doRegister()">Crear cuenta gratis</button>`}
+  `);
+  window._regType='private';
+}
+function pickType(t){window._regType=t;document.getElementById('topt-private').classList.toggle('sel',t==='private');document.getElementById('topt-pro').classList.toggle('sel',t==='pro');document.getElementById('nameLabel').textContent=t==='pro'?'Nombre del concesionario':'Nombre completo';}
+async function doLogin(){
+  try{ const {token:tk,user}=await API('/auth/login',{method:'POST',auth:false,body:{email:document.getElementById('aEmail').value,pass:document.getElementById('aPass').value}});
+    token=tk;localStorage.setItem('al_token',tk);me=user;await loadFavs();closeModal();renderNav();toast('¡Hola, '+user.name.split(' ')[0]+'! 👋','ok');go('dashboard');
+  }catch(e){toast(e.message,'err')}
+}
+async function doRegister(){
+  try{ const body={name:document.getElementById('rName').value,email:document.getElementById('rEmail').value,pass:document.getElementById('rPass').value,type:window._regType,phone:document.getElementById('rPhone').value,city:document.getElementById('rCity').value};
+    const {token:tk,user}=await API('/auth/register',{method:'POST',auth:false,body});
+    token=tk;localStorage.setItem('al_token',tk);me=user;favIds=new Set();closeModal();renderNav();toast('¡Cuenta creada! Bienvenido 🎉','ok');go('publish');
+  }catch(e){toast(e.message,'err')}
+}
+function logout(){token='';localStorage.removeItem('al_token');me=null;favIds=new Set();renderNav();closeMenu();toast('Sesión cerrada');go('home')}
+
+/* ---------- PUBLICAR ---------- */
+async function renderPublish(){
+  if(!me){openAuth('register');toast('Crea tu cuenta gratis para publicar','');await renderHome();return}
+  if(!pubDraft)pubDraft={brand:'',model:'',year:'',fuel:'',gear:'',body:'',price:'',km:'',power:'',color:'',province:'',doors:5,seats:5,photos:[],desc:'',extras:[],warranty:false,noAccidents:false};
+  const steps=['Datos básicos','Detalles','Fotos','Precio y publicar'];
+  document.getElementById('app').innerHTML=`<div class="container"><div class="wizard">
+    <div class="plan-note"><span class="em">🎉</span><div>Estás publicando con el plan <b>Gratis</b>. Sin coste, sin límite de anuncios, sin permanencia.</div></div>
+    <div class="wiz-steps">${steps.map((s,i)=>`<div class="wstep ${i===pubStep?'active':''} ${i<pubStep?'done':''}"><span class="n">${i<pubStep?'✓':i+1}</span><span>${s}</span></div>`).join('')}</div>
+    <div class="wiz-card" id="wizCard"></div>
+  </div></div>`;
+  renderPubStep();
+}
+function renderPubStep(){
+  const d=pubDraft;const card=document.getElementById('wizCard');
+  if(pubStep===0){
+    card.innerHTML=`<h3>Datos básicos</h3><p class="wh">Empecemos por lo esencial</p>
+      <div class="form-two"><div class="form-row"><label>Marca *</label><select id="pBrand" onchange="pubModels()"><option value="">Selecciona…</option>${Object.keys(BRANDS).map(b=>`<option ${d.brand===b?'selected':''}>${b}</option>`).join('')}</select></div>
+      <div class="form-row"><label>Modelo *</label><select id="pModel"><option value="">Selecciona…</option></select></div></div>
+      <div class="form-two"><div class="form-row"><label>Año *</label><select id="pYear"><option value="">Año…</option>${Array.from({length:20},(_,i)=>2026-i).map(y=>`<option ${+d.year===y?'selected':''}>${y}</option>`).join('')}</select></div>
+      <div class="form-row"><label>Carrocería</label><select id="pBody"><option value="">Tipo…</option>${BODIES.map(b=>`<option ${d.body===b?'selected':''}>${b}</option>`).join('')}</select></div></div>
+      <div class="wiz-nav"><span></span><button class="btn btn-primary" onclick="pubNext(0)">Continuar →</button></div>`;
+    pubModels();
+  }else if(pubStep===1){
+    card.innerHTML=`<h3>Detalles del vehículo</h3><p class="wh">Cuanta más información, más confianza</p>
+      <div class="form-two"><div class="form-row"><label>Kilómetros *</label><input id="pKm" type="number" value="${d.km}"></div><div class="form-row"><label>Potencia (CV)</label><input id="pPower" type="number" value="${d.power}"></div></div>
+      <div class="form-two"><div class="form-row"><label>Combustible *</label><select id="pFuel"><option value="">Selecciona…</option>${FUELS.map(f=>`<option ${d.fuel===f?'selected':''}>${f}</option>`).join('')}</select></div><div class="form-row"><label>Cambio *</label><select id="pGear"><option value="">Selecciona…</option>${GEARS.map(g=>`<option ${d.gear===g?'selected':''}>${g}</option>`).join('')}</select></div></div>
+      <div class="form-two"><div class="form-row"><label>Color</label><select id="pColor"><option value="">Selecciona…</option>${COLORS.map(c=>`<option ${d.color===c?'selected':''}>${c}</option>`).join('')}</select></div><div class="form-row"><label>Provincia *</label><select id="pProv"><option value="">Selecciona…</option>${PROVINCES.map(p=>`<option ${d.province===p?'selected':''}>${p}</option>`).join('')}</select></div></div>
+      <div class="form-two"><div class="form-row"><label>Puertas</label><select id="pDoors">${DOORS.map(n=>`<option ${+d.doors===n?'selected':''}>${n}</option>`).join('')}</select></div><div class="form-row"><label>Plazas</label><select id="pSeats">${SEATS.map(n=>`<option ${+d.seats===n?'selected':''}>${n}</option>`).join('')}</select></div></div>
+      <div class="form-row"><label>Equipamiento y extras</label><div class="checks" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;max-height:none">${EXTRAS.map(x=>`<label><input type="checkbox" ${d.extras.includes(x)?'checked':''} onchange="togglePubExtra('${x}')"> ${x}</label>`).join('')}</div></div>
+      <div class="form-row"><label>Estado del vehículo</label><div class="checks" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 20px"><label><input type="checkbox" ${d.noAccidents?'checked':''} onchange="togglePubFlag('noAccidents')"> Sin accidentes</label><label><input type="checkbox" ${d.warranty?'checked':''} onchange="togglePubFlag('warranty')"> Ofrezco garantía</label></div></div>
+      <div class="wiz-nav"><button class="btn btn-ghost" onclick="pubBack()">← Atrás</button><button class="btn btn-primary" onclick="pubNext(1)">Continuar →</button></div>`;
+  }else if(pubStep===2){
+    card.innerHTML=`<h3>Fotos del coche</h3><p class="wh">Los anuncios con fotos reciben hasta 5× más contactos</p>
+      <div class="photo-drop" onclick="document.getElementById('pFile').click()"><div class="em">📸</div><b>Haz clic para añadir fotos</b><p style="color:var(--muted);margin:6px 0 0">JPG o PNG · varias a la vez</p></div>
+      <input type="file" id="pFile" accept="image/*" multiple class="hidden" onchange="addPhotos(event)">
+      <div class="photo-preview" id="photoPrev">${d.photos.map((p,i)=>`<div class="pp"><img src="${p}"><button class="rm" onclick="rmPhoto(${i})">✕</button></div>`).join('')}</div>
+      <div class="wiz-nav"><button class="btn btn-ghost" onclick="pubBack()">← Atrás</button><button class="btn btn-primary" onclick="pubNext(2)">Continuar →</button></div>`;
+  }else if(pubStep===3){
+    card.innerHTML=`<h3>Precio y descripción</h3><p class="wh">Último paso antes de publicar gratis</p>
+      <div class="form-row"><label>Precio de venta al contado (€) *</label><input id="pPrice" type="number" value="${d.price}"></div>
+      <div class="form-row"><label>Descripción</label><textarea id="pDesc" placeholder="Estado, extras, mantenimiento, motivo de venta…">${d.desc}</textarea></div>
+      <div class="plan-note"><span class="em">✓</span><div>Se publicará como <b>anuncio gratuito</b>. Podrás editarlo o destacarlo desde tu panel.</div></div>
+      <div class="wiz-nav"><button class="btn btn-ghost" onclick="pubBack()">← Atrás</button><button class="btn btn-accent btn-lg" onclick="publishCar()">🚀 Publicar gratis</button></div>`;
+  }
+}
+function pubModels(){const b=document.getElementById('pBrand')?.value;const m=document.getElementById('pModel');if(!m)return;m.innerHTML='<option value="">Selecciona…</option>'+(b&&BRANDS[b]?BRANDS[b].map(x=>`<option ${pubDraft.model===x?'selected':''}>${x}</option>`).join(''):'')}
+function saveStep(){const g=id=>document.getElementById(id)?.value;
+  if(pubStep===0){pubDraft.brand=g('pBrand')||pubDraft.brand;pubDraft.model=g('pModel')||pubDraft.model;pubDraft.year=g('pYear')||pubDraft.year;pubDraft.body=g('pBody')||pubDraft.body}
+  if(pubStep===1){pubDraft.km=g('pKm');pubDraft.power=g('pPower');pubDraft.fuel=g('pFuel');pubDraft.gear=g('pGear');pubDraft.color=g('pColor');pubDraft.province=g('pProv');pubDraft.doors=g('pDoors');pubDraft.seats=g('pSeats')}
+  if(pubStep===3){pubDraft.price=g('pPrice');pubDraft.desc=g('pDesc')}}
+function pubNext(step){saveStep();
+  if(step===0&&(!pubDraft.brand||!pubDraft.model||!pubDraft.year)){toast('Completa marca, modelo y año','err');return}
+  if(step===1&&(!pubDraft.km||!pubDraft.fuel||!pubDraft.gear||!pubDraft.province)){toast('Completa km, combustible, cambio y provincia','err');return}
+  pubStep++;renderPublish()}
+function pubBack(){saveStep();pubStep--;renderPublish()}
+function togglePubExtra(x){const i=pubDraft.extras.indexOf(x);if(i>=0)pubDraft.extras.splice(i,1);else pubDraft.extras.push(x)}
+function togglePubFlag(k){pubDraft[k]=!pubDraft[k]}
+function addPhotos(e){const files=[...e.target.files];let pending=files.length;files.forEach(f=>{const r=new FileReader();r.onload=()=>{pubDraft.photos.push(r.result);if(--pending===0)renderPubStep()};r.readAsDataURL(f)})}
+function rmPhoto(i){pubDraft.photos.splice(i,1);renderPubStep()}
+async function publishCar(){
+  saveStep();const d=pubDraft;
+  if(!d.price){toast('Indica el precio','err');return}
+  try{ const {car}=await API('/cars',{method:'POST',body:{brand:d.brand,model:d.model,year:+d.year,fuel:d.fuel,gear:d.gear,body:d.body,price:+d.price,km:+d.km,power:+d.power,color:d.color,province:d.province,doors:+d.doors,seats:+d.seats,extras:d.extras,warranty:d.warranty,noAccidents:d.noAccidents,desc:d.desc,photos:d.photos}});
+    pubDraft=null;pubStep=0;toast('¡Anuncio publicado gratis! 🎉','ok');currentDetail=car.id;go('detail');
+  }catch(e){toast(e.message,'err')}
+}
+
+/* ---------- PANEL ---------- */
+async function renderDashboard(){
+  if(!me){openAuth('login');return}
+  const {cars}=await API('/my/cars');
+  const {threads}=await API('/threads').catch(()=>({threads:[]}));
+  const totalViews=cars.reduce((s,c)=>s+c.views,0);
+  const active=cars.filter(c=>c.status==='active').length;
+  document.getElementById('app').innerHTML=`<div class="container"><div class="dash-layout">
+    <aside class="dash-side"><a class="active" onclick="go('dashboard')">▤ Mis anuncios</a><a onclick="go('publish')">＋ Publicar coche</a><a onclick="go('favorites')">♥ Favoritos</a><a onclick="openMyAlerts()">🔔 Mis alertas</a><a onclick="go('messages')">✉ Mensajes ${threads.length?`(${threads.length})`:''}</a><a onclick="logout()">⏻ Cerrar sesión</a></aside>
+    <div>
+      <div class="section-head"><div><h2>Hola, ${me.name.split(' ')[0]} 👋</h2><p>${me.type==='pro'?'Panel de concesionario':'Tu panel de vendedor'} · Plan ${me.plan}</p></div><button class="btn btn-accent" onclick="go('publish')">＋ Publicar coche</button></div>
+      <div class="dash-stats">
+        <div class="stat-card"><div class="lab">Anuncios activos</div><div class="val">${active}</div></div>
+        <div class="stat-card"><div class="lab">Visitas totales</div><div class="val">${fmt(totalViews)}</div></div>
+        <div class="stat-card"><div class="lab">Mensajes</div><div class="val">${threads.length}</div></div>
+        <div class="stat-card"><div class="lab">Coste este mes</div><div class="val">0 €<small> gratis</small></div></div>
+      </div>
+      ${cars.length?`<div class="mylist">${cars.map(c=>`<div class="row">
+        <div class="thumb">${c.photos&&c.photos.length?`<img src="${c.photos[0]}" style="width:100%;height:100%;object-fit:cover">`:'<div class="placeholder">🚗</div>'}</div>
+        <div class="info"><h4>${c.brand} ${c.model} ${c.year}</h4><div class="meta">${euro(c.price)} · ${fmt(c.km)} km · ${c.province}</div>
+          <div class="st-badges"><span class="stbadge ${c.status==='active'?'active':''}">${c.status==='active'?'● Activo':'○ Pausado'}</span><span class="stbadge views">👁 ${c.views} visitas</span>${c.featured?'<span class="stbadge" style="background:#eafaf3;color:var(--accent-dark)">★ Destacado</span>':''}</div></div>
+        <div class="acts"><button class="btn btn-ghost btn-sm" onclick="openDetail(${c.id})">Ver</button><button class="btn btn-ghost btn-sm" onclick="carAction(${c.id},'status')">${c.status==='active'?'Pausar':'Activar'}</button><button class="btn ${c.featured?'btn-ghost':'btn-accent'} btn-sm" onclick="carAction(${c.id},'feature')">${c.featured?'Quitar ★':'Destacar'}</button><button class="btn btn-danger btn-sm" onclick="delCar(${c.id})">Eliminar</button></div>
+      </div>`).join('')}</div>`:`<div class="empty-state" style="background:#fff;border-radius:14px"><div class="em">🚗</div><h3>Aún no has publicado ningún coche</h3><button class="btn btn-accent btn-lg" onclick="go('publish')">＋ Publicar mi primer coche</button></div>`}
+    </div></div></div>`;
+}
+async function carAction(id,action){try{await API('/cars/'+id+'/'+action,{method:'POST'});renderDashboard()}catch(e){toast(e.message,'err')}}
+async function delCar(id){if(!confirm('¿Eliminar este anuncio? No se puede deshacer.'))return;try{await API('/cars/'+id,{method:'DELETE'});toast('Anuncio eliminado');renderDashboard()}catch(e){toast(e.message,'err')}}
+
+/* ---------- CONTACTO / MENSAJES ---------- */
+function contactSeller(cid,label){
+  if(!me){openAuth('login');toast('Inicia sesión para contactar','err');return}
+  showModal(`<h2>Contactar</h2><p class="mp">Escribe al vendedor sobre el ${label}</p><div class="form-row"><label>Tu mensaje</label><textarea id="cMsg">Hola, estoy interesado en el ${label}. ¿Sigue disponible?</textarea></div><button class="btn btn-primary btn-block" onclick="sendContact(${cid})">Enviar mensaje</button>`);
+}
+async function sendContact(cid){
+  const txt=document.getElementById('cMsg').value.trim();if(!txt){toast('Escribe un mensaje','err');return}
+  try{await API('/threads',{method:'POST',body:{carId:cid,body:txt}});closeModal();toast('Mensaje enviado ✓','ok');}catch(e){toast(e.message,'err')}
+}
+async function renderMessages(){
+  if(!me){openAuth('login');return}
+  const {threads}=await API('/threads');
+  document.getElementById('app').innerHTML=`<div class="container">
+    <div class="section-head" style="margin-top:26px"><div><h2>Mensajes</h2><p>Tus conversaciones</p></div></div>
+    ${threads.length?`<div class="msg-layout"><div class="msg-list" id="msgList">${threads.map(msgItem).join('')}</div><div class="msg-thread" id="msgThread"><div class="empty-state" style="margin:auto"><div class="em">✉</div><p>Selecciona una conversación</p></div></div></div>`:`<div class="empty-state"><div class="em">✉</div><h3>No tienes mensajes todavía</h3><button class="btn btn-primary" onclick="go('results')">Explorar coches</button></div>`}
+  </div>`;
+  if(threads.length){activeThread=threads[0].id;openThread(threads[0].id)}
+}
+function msgItem(t){
+  return `<div class="msg-item ${t.id===activeThread?'active':''}" onclick="openThread(${t.id})">
+    <span class="av">${initials(t.other&&t.other.name)}</span>
+    <div class="mi"><div class="top"><b>${t.other?t.other.name.split(' ')[0]:'Usuario'}</b><span class="time">${t.last?daysAgo(t.last.ts):''}</span></div>
+    <div style="font-size:12px;color:var(--muted)">${t.car?t.car.brand+' '+t.car.model:''}</div>
+    <div class="prev">${t.last?t.last.body:''}</div></div></div>`;
+}
+async function openThread(id){
+  activeThread=id;
+  const {messages}=await API('/threads/'+id);
+  const {threads}=await API('/threads');
+  const t=threads.find(x=>x.id===id)||{};
+  document.getElementById('msgList').innerHTML=threads.map(msgItem).join('');
+  document.getElementById('msgThread').innerHTML=`
+    <div class="th-head">${t.other?t.other.name:'Usuario'} · <span style="font-weight:400;color:var(--muted)">${t.car?t.car.brand+' '+t.car.model:''}</span></div>
+    <div class="th-body" id="thBody">${messages.map(m=>`<div class="bubble ${m.from===me.id?'out':'in'}">${m.txt}</div>`).join('')}</div>
+    <div class="th-input"><input id="thInput" placeholder="Escribe un mensaje…" onkeydown="if(event.key==='Enter')sendThread(${id})"><button class="btn btn-primary" onclick="sendThread(${id})">Enviar</button></div>`;
+  const b=document.getElementById('thBody');b.scrollTop=b.scrollHeight;
+}
+async function sendThread(id){
+  const inp=document.getElementById('thInput');const txt=inp.value.trim();if(!txt)return;
+  try{await API('/threads/'+id+'/messages',{method:'POST',body:{body:txt}});openThread(id)}catch(e){toast(e.message,'err')}
+}
+
+/* ---------- PRECIOS ---------- */
+async function renderPricing(){
+  document.getElementById('app').innerHTML=`<div class="container"><div class="pricing">
+    <div class="launch-banner"><b>🎉 Oferta de lanzamiento:</b> todos los planes son GRATIS durante la fase beta. Publica sin coste mientras hacemos crecer la comunidad.</div>
+    <div class="pricing-head"><h2>Planes pensados para vender más</h2><p>Empieza gratis. Cuando el portal esté lleno de compradores, ofreceremos planes premium opcionales. Los que llegan ahora, entran gratis.</p></div>
+    <div class="plans">
+      <div class="plan"><h3>Particular</h3><p class="pdesc">Para vender tu coche</p><div class="amount">0 €</div><div class="period">siempre gratis</div>
+        <ul><li><span class="ck">✓</span> Hasta 3 anuncios activos</li><li><span class="ck">✓</span> Fotos ilimitadas</li><li><span class="ck">✓</span> Mensajería con compradores</li><li><span class="ck">✓</span> Estadísticas de visitas</li><li class="off"><span>✕</span> Anuncios destacados</li></ul>
+        <button class="btn btn-ghost btn-block" onclick="go('publish')">Publicar gratis</button></div>
+      <div class="plan featured"><span class="pop">MÁS POPULAR</span><h3>Profesional</h3><p class="pdesc">Para concesionarios</p><div class="amount">0 €<small> ahora</small></div><div class="period">gratis en beta · luego desde 49 €/mes</div>
+        <ul><li><span class="ck">✓</span> <b>Anuncios ilimitados</b></li><li><span class="ck">✓</span> Ficha de concesionario</li><li><span class="ck">✓</span> Panel de gestión de stock</li><li><span class="ck">✓</span> Estadísticas avanzadas</li><li><span class="ck">✓</span> Soporte prioritario</li></ul>
+        <button class="btn btn-primary btn-block" onclick="startPro()">Empezar gratis</button></div>
+      <div class="plan"><h3>Premium</h3><p class="pdesc">Máxima visibilidad</p><div class="amount">0 €<small> ahora</small></div><div class="period">gratis en beta · luego desde 99 €/mes</div>
+        <ul><li><span class="ck">✓</span> Todo lo de Profesional</li><li><span class="ck">✓</span> Anuncios siempre destacados</li><li><span class="ck">✓</span> Aparición en portada</li><li><span class="ck">✓</span> Etiqueta verificado</li><li><span class="ck">✓</span> Gestor de cuenta dedicado</li></ul>
+        <button class="btn btn-ghost btn-block" onclick="startPro()">Empezar gratis</button></div>
+    </div>
+    <div class="value" style="margin-top:44px"><div><h2>¿Y cómo ganáis dinero si es gratis?</h2><p>Primero llenamos el portal de coches y compradores. Cuando aportemos valor real, ofreceremos servicios premium opcionales: destacados, publicidad y herramientas para grandes concesionarios.</p><button class="btn btn-accent btn-lg" onclick="go('publish')">Publicar mi coche</button></div>
+      <div class="cost-compare"><h3 style="margin:0 0 8px">Lo que te ahorras al año</h3><div class="row"><span>Portal líder (≈450 €/mes)</span><span class="them">5.400 €</span></div><div class="row"><span>Con MercaCoches</span><span class="us">0 €</span></div><div class="row"><span>Ahorro anual</span><span class="us">hasta 5.400 €</span></div></div>
+    </div>
+  </div></div>`;
+}
+async function startPro(){
+  if(!me){openAuth('register');return}
+  try{const {user}=await API('/auth/plan',{method:'POST',body:{plan:'Profesional'}});me=user;renderNav();toast('¡Plan Profesional activado gratis! 🎉','ok');go('dashboard');}catch(e){toast(e.message,'err')}
+}
+
+/* ---------- MODAL ---------- */
+function showModal(html,wide=false){closeModal();const o=document.createElement('div');o.className='overlay';o.id='overlay';o.onclick=e=>{if(e.target===o)closeModal()};o.innerHTML=`<div class="modal ${wide?'wide':''}"><button class="close-x" onclick="closeModal()">✕</button>${html}</div>`;document.body.appendChild(o);}
+function closeModal(){document.getElementById('overlay')?.remove()}
+
+/* ---------- INIT ---------- */
+window.addEventListener('load',async()=>{
+  await restoreSession();
+  renderNav();
+  initCookieBanner();
+  const h=window.location.hash.replace('#','');
+  let mm;
+  if((mm=h.match(/^car-(\d+)$/))){currentDetail=+mm[1];go('detail',false);}
+  else if((mm=h.match(/^reset=(.+)$/))){openReset(mm[1]);renderHome();}
+  else if(h==='verificado'){renderHome();setTimeout(()=>toast('✅ Email verificado. ¡Gracias!','ok'),400);}
+  else if(h&&['home','results','publish','dashboard','favorites','messages','admin'].includes(h))go(h,false);
+  else renderHome();
+});
+
+
+/* ---------- ALERTAS DE BÚSQUEDA ---------- */
+function alertNameFromFilters(f){
+  const parts=[];
+  if(f.brand)parts.push(f.brand+(f.model?' '+f.model:''));
+  else if(f.q)parts.push('"'+f.q+'"');
+  else parts.push('Cualquier coche');
+  if(f.priceMax)parts.push('hasta '+fmt(+f.priceMax)+' €');
+  if(f.yearMin)parts.push('desde '+f.yearMin);
+  if(f.kmMax)parts.push('máx '+fmt(+f.kmMax)+' km');
+  if(f.province)parts.push('en '+f.province);
+  return parts.join(' · ');
+}
+function openCreateAlert(){
+  if(!me){openAuth('login');toast('Inicia sesión para crear alertas','err');return}
+  const name=alertNameFromFilters(filters);
+  showModal(`<h2>🔔 Crear alerta</h2><p class="mp">Te enviaremos un email cuando se publique un coche que encaje con tu búsqueda actual.</p>
+    <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:14px;font-size:14px"><b>Tu búsqueda:</b><br>${name}</div>
+    <div class="form-row"><label>Nombre de la alerta (opcional)</label><input id="alName" placeholder="${name}"></div>
+    <button class="btn btn-accent btn-block" onclick="doCreateAlert()">Activar alerta</button>`);
+}
+async function doCreateAlert(){
+  try{ await API('/alerts',{method:'POST',body:{name:document.getElementById('alName').value,query:filters}});
+    closeModal();toast('Alerta creada. Te avisaremos por email 🔔','ok');
+  }catch(e){toast(e.message,'err')}
+}
+async function openMyAlerts(){
+  if(!me){openAuth('login');return}
+  closeMenu();
+  const {alerts}=await API('/alerts');
+  showModal(`<h2>🔔 Mis alertas</h2><p class="mp">Recibes un email cuando se publica un coche que encaja.</p>
+    ${alerts.length?alerts.map(a=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+      <div style="font-size:14px"><b>${a.name}</b><br><span style="color:var(--muted);font-size:12px">${a.notified?a.notified+' aviso'+(a.notified!==1?'s':'')+' enviado'+(a.notified!==1?'s':''):'Sin avisos aún'}</span></div>
+      <button class="btn btn-danger btn-sm" onclick="delAlert(${a.id})">Borrar</button></div>`).join('')
+    :`<div style="text-align:center;padding:20px;color:var(--muted)">No tienes alertas.<br>Créalas desde una búsqueda con el botón <b>🔔 Crear alerta</b>.</div>
+     <button class="btn btn-primary btn-block" onclick="closeModal();go('results')">Ir a buscar coches</button>`}`,true);
+}
+async function delAlert(id){
+  try{ await API('/alerts/'+id,{method:'DELETE'});toast('Alerta borrada');openMyAlerts(); }
+  catch(e){toast(e.message,'err')}
+}
+
+/* ---------- RECUPERAR CONTRASEÑA ---------- */
+function openForgot(){
+  showModal(`<h2>Recuperar contraseña</h2><p class="mp">Te enviaremos un enlace para crear una nueva.</p>
+    <div class="form-row"><label>Email de tu cuenta</label><input id="fEmail" type="email" placeholder="tu@email.com"></div>
+    <button class="btn btn-primary btn-block" onclick="doForgot()">Enviarme el enlace</button>`);
+}
+async function doForgot(){
+  try{ const r=await API('/auth/forgot',{method:'POST',auth:false,body:{email:document.getElementById('fEmail').value}});
+    closeModal();toast(r.msg||'Enlace enviado si el email existe','ok');
+  }catch(e){toast(e.message,'err')}
+}
+function openReset(tok){
+  showModal(`<h2>Nueva contraseña</h2><p class="mp">Escribe tu contraseña nueva.</p>
+    <div class="form-row"><label>Contraseña nueva</label><input id="nPass" type="password" placeholder="Mínimo 6 caracteres"></div>
+    <div class="form-row"><label>Repítela</label><input id="nPass2" type="password"></div>
+    <button class="btn btn-primary btn-block" onclick="doReset('${tok}')">Guardar y entrar</button>`);
+}
+async function doReset(tok){
+  const p1=document.getElementById('nPass').value,p2=document.getElementById('nPass2').value;
+  if(p1!==p2){toast('Las contraseñas no coinciden','err');return}
+  try{ const {token:tk,user}=await API('/auth/reset',{method:'POST',auth:false,body:{token:tok,pass:p1}});
+    token=tk;localStorage.setItem('al_token',tk);me=user;await loadFavs();closeModal();renderNav();
+    history.replaceState(null,'','/#home');toast('Contraseña cambiada. ¡Bienvenido de nuevo! 👋','ok');go('dashboard');
+  }catch(e){toast(e.message,'err')}
+}
+
+/* ---------- ADMINISTRACIÓN ---------- */
+async function renderAdmin(){
+  if(!me||me.role!=='admin'){toast('Solo administradores','err');go('home');return}
+  const st=await API('/admin/stats');
+  const box=(n,l)=>`<div style="background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:18px;text-align:center"><div style="font-size:26px;font-weight:800;color:var(--brand)">${fmt(n)}</div><div style="font-size:13px;color:var(--muted)">${l}</div></div>`;
+  document.getElementById('app').innerHTML=`<div class="container"><section class="block">
+    <div class="section-head"><div><h2>⚙ Administración</h2><p>Gestión de usuarios y anuncios</p></div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px">
+      ${box(st.users,'Usuarios')}${box(st.usersPro,'Profesionales')}${box(st.usersBanned,'Suspendidos')}
+      ${box(st.carsActive,'Anuncios activos')}${box(st.cars,'Anuncios totales')}${box(st.messages,'Mensajes')}
+      ${box(st.views,'Visitas a anuncios')}${box(st.avgPrice+' €','Precio medio')}
+    </div>
+    <div class="tabs" style="margin-bottom:14px"><button class="active" id="admTabU" onclick="admTab('users')">Usuarios</button><button id="admTabC" onclick="admTab('cars')">Anuncios</button></div>
+    <input id="admSearch" placeholder="Buscar..." style="width:100%;max-width:340px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;margin-bottom:14px" oninput="admRefresh()">
+    <div id="admBody"></div>
+  </section></div>`;
+  window._admTab='users';admRefresh();
+}
+function admTab(t){window._admTab=t;document.getElementById('admTabU').classList.toggle('active',t==='users');document.getElementById('admTabC').classList.toggle('active',t==='cars');admRefresh()}
+async function admRefresh(){
+  const q=encodeURIComponent(document.getElementById('admSearch')?.value||'');
+  const el=document.getElementById('admBody');if(!el)return;
+  const td='padding:9px 10px;border-bottom:1px solid var(--line);font-size:14px;text-align:left';
+  if(window._admTab==='users'){
+    const {users}=await API('/admin/users?q='+q);
+    el.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;box-shadow:var(--shadow)">
+      <tr><th style="${td}">Usuario</th><th style="${td}">Tipo</th><th style="${td}">Anuncios</th><th style="${td}">Estado</th><th style="${td}">Acciones</th></tr>
+      ${users.map(u=>`<tr>
+        <td style="${td}"><b>${u.name}</b><br><span style="color:var(--muted);font-size:12px">${u.email}${u.verified?' ✓':''}</span></td>
+        <td style="${td}">${u.type==='pro'?'🏢 Pro':'👤 Particular'}${u.role==='admin'?' · <b>admin</b>':''}</td>
+        <td style="${td}">${u.cars}</td>
+        <td style="${td}">${u.banned?'<span style="color:var(--danger);font-weight:700">Suspendido</span>':'Activo'}</td>
+        <td style="${td}">${u.role==='admin'?'—':`<button class="btn btn-ghost btn-sm" onclick="admBan(${u.id})">${u.banned?'Reactivar':'Suspender'}</button> <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="admDelUser(${u.id})">Borrar</button>`}</td>
+      </tr>`).join('')}</table></div>`;
+  }else{
+    const {cars}=await API('/admin/cars?q='+q);
+    el.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;box-shadow:var(--shadow)">
+      <tr><th style="${td}">Anuncio</th><th style="${td}">Precio</th><th style="${td}">Vendedor</th><th style="${td}">Estado</th><th style="${td}">Visitas</th><th style="${td}">Acciones</th></tr>
+      ${cars.map(c=>`<tr>
+        <td style="${td}"><a onclick="openDetail(${c.id})" style="cursor:pointer;color:var(--brand);font-weight:700">${c.brand} ${c.model} ${c.year}</a></td>
+        <td style="${td}">${euro(c.price)}</td>
+        <td style="${td}">${c.owner.name||'—'}</td>
+        <td style="${td}">${c.status==='active'?'Activo':'Pausado'}${c.featured?' · ★':''}</td>
+        <td style="${td}">${fmt(c.views)}</td>
+        <td style="${td}"><button class="btn btn-ghost btn-sm" onclick="admToggleCar(${c.id})">${c.status==='active'?'Pausar':'Activar'}</button> <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="admDelCar(${c.id})">Borrar</button></td>
+      </tr>`).join('')}</table></div>`;
+  }
+}
+async function admBan(id){try{await API('/admin/users/'+id+'/ban',{method:'POST'});toast('Hecho','ok');admRefresh()}catch(e){toast(e.message,'err')}}
+async function admDelUser(id){if(!confirm('¿Borrar este usuario y todos sus anuncios? No se puede deshacer.'))return;try{await API('/admin/users/'+id,{method:'DELETE'});toast('Usuario borrado','ok');admRefresh()}catch(e){toast(e.message,'err')}}
+async function admToggleCar(id){try{await API('/cars/'+id+'/status',{method:'POST'});toast('Hecho','ok');admRefresh()}catch(e){toast(e.message,'err')}}
+async function admDelCar(id){if(!confirm('¿Borrar este anuncio?'))return;try{await API('/cars/'+id,{method:'DELETE'});toast('Anuncio borrado','ok');admRefresh()}catch(e){toast(e.message,'err')}}
+
+/* ---------- AVISO DE COOKIES ---------- */
+function initCookieBanner(){
+  let c=null;try{c=localStorage.getItem('mc_cookies')}catch(e){}
+  if(c)return;
+  const d=document.createElement('div');d.id='ckb';
+  d.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:3000;background:#1C1C1E;color:#e8eef6;padding:14px 18px;border-top:2px solid #E8001D;box-shadow:0 -4px 20px rgba(0,0,0,.5)';
+  d.innerHTML=`<div style="max-width:1200px;margin:0 auto;display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:space-between">
+    <p style="font-size:13px;margin:0;flex:1;min-width:240px">Usamos almacenamiento esencial para tu sesión y preferencias. No usamos cookies publicitarias. Más info en la <a href="/cookies" style="color:#ff6b6b">Política de cookies</a>.</p>
+    <button onclick="ckOk()" style="background:#E8001D;color:#fff;border:none;border-radius:6px;padding:9px 18px;font-weight:800;cursor:pointer;font-family:inherit">Entendido</button></div>`;
+  document.body.appendChild(d);
+}
+function ckOk(){try{localStorage.setItem('mc_cookies','ok')}catch(e){}document.getElementById('ckb')?.remove()}
+</script>
+</body>
+</html>
