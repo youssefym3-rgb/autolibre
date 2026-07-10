@@ -359,7 +359,11 @@ async function api(req, res, url) {
   // ----- CARS -----
   if (p === '/api/cars' && method === 'GET') {
     const rows = queryCars(q);
-    return send(res, 200, { total: rows.length, cars: rows.map(carOut) });
+    // Paginación opcional (?limit=24&offset=0). Sin limit se devuelven todos (compatibilidad).
+    const off = Math.max(0, +q.offset || 0);
+    const lim = q.limit ? Math.min(Math.max(1, +q.limit), 200) : 0;
+    const page = lim ? rows.slice(off, off + lim) : rows;
+    return send(res, 200, { total: rows.length, offset: off, cars: page.map(carOut) });
   }
   if (p === '/api/cars' && method === 'POST') {
     const u = auth(req); if (!u) return send(res, 401, { error: 'Inicia sesión para publicar' });
@@ -739,15 +743,35 @@ function seoCarCard(car) {
   </div></a>`;
 }
 
+const FUEL_PAGES = [
+  ['diesel', 'Diésel', 'diésel'],
+  ['gasolina', 'Gasolina', 'de gasolina'],
+  ['electricos', 'Eléctrico', 'eléctricos'],
+  ['hibridos', 'Híbrido', 'híbridos'],
+  ['hibridos-enchufables', 'Híbrido enchufable', 'híbridos enchufables'],
+  ['glp', 'GLP', 'de GLP']
+];
+const PRICE_PAGES = [5000, 10000, 15000, 20000, 30000];
+
 function ssrListPage(res, opts) {
   const brand = opts.brand || '', province = opts.province || '';
-  const rows = queryCars({ brand, province, sort: 'recent' }).map(carOut);
-  const pathUrl = '/coches' + (brand ? '/' + slugify(brand) : '') + (province ? '/' + slugify(province) : '');
-  const what = brand ? `${brand} de segunda mano` : 'Coches de segunda mano';
-  const where = province ? ` en ${province}` : (brand ? '' : ' en España');
+  const fuel = opts.fuel || '', priceMax = opts.priceMax || 0;
+  const rows = queryCars({ brand, province, fuels: fuel ? [fuel] : undefined, priceMax: priceMax || '', sort: 'recent' }).map(carOut);
+  const fuelEntry = fuel ? FUEL_PAGES.find(f => f[1] === fuel) : null;
+  let pathUrl = '/coches';
+  if (brand) pathUrl += '/' + slugify(brand);
+  if (province) pathUrl += '/' + slugify(province);
+  if (fuelEntry) pathUrl += '/' + fuelEntry[0];
+  if (priceMax) pathUrl += '/hasta-' + priceMax;
+  let what, where = '';
+  if (priceMax) what = `Coches de segunda mano por menos de ${priceMax.toLocaleString('es-ES')} €`;
+  else if (fuelEntry) what = `Coches ${fuelEntry[2]} de segunda mano`;
+  else what = brand ? `${brand} de segunda mano` : 'Coches de segunda mano';
+  if (province) where = ` en ${province}`;
+  else if (!brand && !fuelEntry && !priceMax) where = ' en España';
   const title = `${what}${where} — MercaCoches`;
   const desc = rows.length
-    ? `${rows.length} ${brand ? 'anuncios de ' + brand : 'coches de segunda mano'}${where}. Compra directamente al vendedor: publicar es gratis y sin comisiones en MercaCoches.`
+    ? `${rows.length} anuncios: ${what.toLowerCase()}${where}. Compra directamente al vendedor: publicar es gratis y sin comisiones en MercaCoches.`
     : `Compra y vende ${brand || 'coches'}${where} de segunda mano. Publicar tu anuncio es gratis y sin comisiones en MercaCoches.`;
   const shown = rows.slice(0, 48);
   const jsonld = {
@@ -760,6 +784,27 @@ function ssrListPage(res, opts) {
   };
   const brands = distinctActive('brand');
   const provinces = distinctActive('province');
+  // Estadísticas reales para el bloque de preguntas frecuentes (estilo grandes portales)
+  let faqs = [];
+  if (rows.length >= 3) {
+    const avgP = Math.round(rows.reduce((s, c) => s + c.price, 0) / rows.length);
+    const minP = Math.min(...rows.map(c => c.price));
+    const avgY = Math.round(rows.reduce((s, c) => s + c.year, 0) / rows.length);
+    const avgK = Math.round(rows.reduce((s, c) => s + c.km, 0) / rows.length / 1000) * 1000;
+    const tema = `${what.toLowerCase()}${where}`;
+    faqs = [
+      [`¿Cuánto cuestan los ${tema}?`,
+       `El precio medio de los ${rows.length} anuncios publicados en MercaCoches es de ${avgP.toLocaleString('es-ES')} €, con opciones desde ${minP.toLocaleString('es-ES')} €. El año medio de los vehículos es ${avgY} y el kilometraje medio ronda los ${avgK.toLocaleString('es-ES')} km.`],
+      [`¿Cuántos ${tema} hay a la venta?`,
+       `Ahora mismo hay ${rows.length} anuncios activos de ${tema} en MercaCoches, publicados directamente por particulares y concesionarios. La cifra se actualiza al momento con cada anuncio nuevo.`],
+      ['¿Cuánto cuesta publicar un anuncio en MercaCoches?',
+       'Nada: publicar es 100 % gratis, sin comisiones por venta ni cuotas mensuales, tanto para particulares como para concesionarios. El comprador y el vendedor tratan directamente, sin intermediarios.']
+    ];
+  }
+  const faqld = faqs.length ? {
+    '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: faqs.map(f => ({ '@type': 'Question', name: f[0], acceptedAnswer: { '@type': 'Answer', text: f[1] } }))
+  } : null;
   const meta = `<!--__WIDE__-->
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${BASE_URL}${pathUrl}">
@@ -767,7 +812,8 @@ ${rows.length ? '' : '<meta name="robots" content="noindex,follow">'}
 <meta property="og:type" content="website"><meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${BASE_URL}${pathUrl}">
 <meta property="og:image" content="${BASE_URL}/og.png"><meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">${JSON.stringify(jsonld)}</script>`;
+<script type="application/ld+json">${JSON.stringify(jsonld)}</script>${faqld ? `
+<script type="application/ld+json">${JSON.stringify(faqld)}</script>` : ''}`;
   const crumbs = `<p style="font-size:13px;color:#6b7a89"><a href="/">Inicio</a> › <a href="/coches">Coches</a>${brand ? ` › <a href="/coches/${slugify(brand)}">${esc(brand)}</a>` : ''}${province ? ` › ${esc(province)}` : ''}</p>`;
   const body = `
 ${crumbs}
@@ -776,8 +822,11 @@ ${crumbs}
 <p><a class="btn" href="/#publish">Publica tu ${esc(brand || 'coche')} gratis →</a></p>
 ${shown.length ? `<div class="grid-seo">${shown.map(seoCarCard).join('')}</div>` : ''}
 ${rows.length > shown.length ? `<p><a href="/#results">Ver los ${rows.length} anuncios en el buscador →</a></p>` : ''}
+${faqs.length ? `<div style="margin-top:34px"><h2 style="font-size:22px">Preguntas frecuentes</h2>${faqs.map(f => `<h2 style="font-size:16px;margin:18px 0 4px">${esc(f[0])}</h2><p>${esc(f[1])}</p>`).join('')}</div>` : ''}
 <div class="linkbox"><h2>Buscar por marca</h2>${brands.map(b => `<a href="/coches/${slugify(b)}">${esc(b)}</a>`).join('')}</div>
-${provinces.length ? `<div class="linkbox"><h2>Buscar por provincia</h2>${provinces.map(pv => `<a href="/coches${brand ? '/' + slugify(brand) : ''}/${slugify(pv)}">${esc(brand ? brand + ' en ' : '')}${esc(pv)}</a>`).join('')}</div>` : ''}`;
+${provinces.length ? `<div class="linkbox"><h2>Buscar por provincia</h2>${provinces.map(pv => `<a href="/coches${brand ? '/' + slugify(brand) : ''}/${slugify(pv)}">${esc(brand ? brand + ' en ' : '')}${esc(pv)}</a>`).join('')}</div>` : ''}
+${(() => { const fp = FUEL_PAGES.filter(f => distinctActive('fuel').includes(f[1])); return fp.length ? `<div class="linkbox"><h2>Por combustible</h2>${fp.map(f => `<a href="/coches/${f[0]}">Coches ${esc(f[2])}</a>`).join('')}</div>` : ''; })()}
+${(() => { const pp = PRICE_PAGES.filter(n => rows.some(c => c.price <= n) || db.prepare("SELECT 1 FROM cars WHERE status='active' AND price<=? LIMIT 1").get(n)); return pp.length ? `<div class="linkbox"><h2>Por precio</h2>${pp.map(n => `<a href="/coches/hasta-${n}">Hasta ${n.toLocaleString('es-ES')} €</a>`).join('')}</div>` : ''; })()}`;
   return sendHtml(res, 200, pageShell(title, body, meta));
 }
 
@@ -792,6 +841,8 @@ function ssrSitemap(res) {
     ...brands.map(b => `${BASE_URL}/coches/${slugify(b)}`),
     ...provinces.map(pv => `${BASE_URL}/coches/${slugify(pv)}`),
     ...combos.map(c => `${BASE_URL}/coches/${slugify(c.brand)}/${slugify(c.province)}`),
+    ...FUEL_PAGES.filter(f => distinctActive('fuel').includes(f[1])).map(f => `${BASE_URL}/coches/${f[0]}`),
+    ...PRICE_PAGES.filter(n => db.prepare("SELECT 1 FROM cars WHERE status='active' AND price<=? LIMIT 1").get(n)).map(n => `${BASE_URL}/coches/hasta-${n}`),
     ...cars.map(c => `${BASE_URL}/coche/${c.id}`)
   ];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
@@ -827,13 +878,16 @@ const server = http.createServer((req, res) => {
   if ((m = p.match(/^\/coche\/(\d+)\/?$/))) return ssrCarPage(+m[1], res);
   // Listados indexables: /coches · /coches/<marca|provincia> · /coches/<marca>/<provincia>
   if (p === '/coches' || p === '/coches/') return ssrListPage(res, {});
+  if ((m = p.match(/^\/coches\/hasta-(\d+)\/?$/))) return ssrListPage(res, { priceMax: +m[1] });
   if ((m = p.match(/^\/coches\/([a-z0-9-]+)\/?$/))) {
     const seg = m[1];
     const brand = bySlug(distinctActive('brand'), seg);
     if (brand) return ssrListPage(res, { brand });
     const province = bySlug(distinctActive('province'), seg);
     if (province) return ssrListPage(res, { province });
-    return ssrListPage(res, {}); // slug desconocido: listado general (noindex si vacío no aplica; canonical /coches)
+    const fp = FUEL_PAGES.find(f => f[0] === seg);
+    if (fp) return ssrListPage(res, { fuel: fp[1] });
+    return ssrListPage(res, {}); // slug desconocido: listado general (canonical /coches)
   }
   if ((m = p.match(/^\/coches\/([a-z0-9-]+)\/([a-z0-9-]+)\/?$/))) {
     const brand = bySlug(distinctActive('brand'), m[1]);
