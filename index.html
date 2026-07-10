@@ -484,6 +484,61 @@ input[type=text],input[type=number],input[type=email],input[type=password],texta
 .photo-drop:hover{background:#15151a;border-color:var(--rojo)}
 .photo-preview .pp{background:#111}
 .mylist{background:transparent;box-shadow:none}
+/* ═══ CAPA SHOWROOM PREMIUM — solo estética, no toca funcionalidad ═══ */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+:root{--ease:cubic-bezier(.22,.61,.36,1)}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit','Barlow',sans-serif}
+h1,h2,h3,h4,.logo,.section-head h2,.car-title,.big-price,.price{font-family:'Outfit',sans-serif;letter-spacing:-.02em}
+.btn{border-radius:100px;text-transform:none;letter-spacing:.02em;font-family:'Outfit',sans-serif;font-weight:600;transition:transform .25s var(--ease),box-shadow .25s var(--ease),background .25s}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary,.btn-accent{box-shadow:0 6px 24px rgba(232,0,29,.35)}
+.btn-primary:hover,.btn-accent:hover{box-shadow:0 10px 32px rgba(232,0,29,.5)}
+header.top{background:rgba(10,10,11,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.logo{font-weight:800;font-size:22px;text-transform:none;letter-spacing:.01em}
+.nav-links a{text-transform:none;font-family:'Outfit',sans-serif;font-size:14.5px;letter-spacing:.01em}
+.ticker{height:32px;background:rgba(28,28,30,.55)}
+.ticker-label{background:transparent;color:var(--rojo);font-size:11px;letter-spacing:.2em}
+.ticker-item{font-size:12.5px;color:#7a7a80}
+.hero{min-height:88vh}
+.hero-bg{animation:kenburns 22s ease-in-out infinite alternate;transform-origin:60% 40%}
+@keyframes kenburns{from{transform:scale(1)}to{transform:scale(1.09)}}
+.hero h1{font-size:70px;font-weight:800;text-transform:none;letter-spacing:-.035em;line-height:1.02}
+.hero .container{padding-bottom:170px}
+.badge-free{border-radius:100px;letter-spacing:.16em;padding:8px 16px}
+.hero .badge-free,.hero h1,.hero p.sub,.hero-stats{opacity:0;transform:translateY(26px);animation:rise .9s var(--ease) forwards}
+.hero h1{animation-delay:.12s}.hero p.sub{animation-delay:.26s}.hero-stats{animation-delay:.4s}
+@keyframes rise{to{opacity:1;transform:none}}
+.searchbox{background:rgba(22,22,24,.82);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.08);border-top:1px solid rgba(255,255,255,.16);border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.55)}
+.searchbox h3{text-transform:none;letter-spacing:-.01em}
+.field select,.field input{border-radius:12px;transition:border-color .2s,box-shadow .2s}
+.chip{border-radius:100px;transition:transform .25s var(--ease),border-color .25s,color .25s}
+.chip:hover{transform:translateY(-1px)}
+.car-card{border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#1d1d20 0%,#141416 100%);border:1px solid rgba(255,255,255,.06);box-shadow:0 10px 30px rgba(0,0,0,.45);transition:transform .35s var(--ease),box-shadow .35s var(--ease),border-color .35s}
+.car-card:hover{transform:translateY(-6px);border-color:rgba(232,0,29,.55);box-shadow:0 26px 60px rgba(0,0,0,.6),0 0 0 1px rgba(232,0,29,.25)}
+.car-photo{overflow:hidden}
+.car-photo .ph,.car-photo img{transition:transform .6s var(--ease)}
+.car-card:hover .car-photo .ph,.car-card:hover .car-photo img{transform:scale(1.06)}
+.car-title{text-transform:none}
+.section-head{border-bottom:1px solid rgba(255,255,255,.09)}
+.section-head h2{text-transform:none;font-weight:700}
+.reveal{opacity:0;transform:translateY(24px)}
+.reveal.vis{opacity:1;transform:none;transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.main-img,.gallery .main-img{border-radius:18px;overflow:hidden}
+.detail-desc,.side-card{border-radius:18px}
+.side-card{background:rgba(28,28,30,.85)!important;backdrop-filter:blur(14px);box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.big-price{font-size:34px;letter-spacing:-.03em}
+.specs-table .st{transition:background .2s}
+.specs-table .st:hover{background:rgba(255,255,255,.03)}
+.thumbs .t{border-radius:10px;overflow:hidden;transition:transform .25s var(--ease)}
+.thumbs .t:hover{transform:translateY(-2px)}
+.thumbs .t.active{outline:2px solid var(--rojo)}
+.modal{border-radius:20px}
+#cmpBar{backdrop-filter:blur(12px);background:rgba(11,20,33,.88);border:1px solid rgba(255,255,255,.1)}
+footer.foot{border-top:1px solid rgba(255,255,255,.08)}
+.foot-col h5{letter-spacing:.16em;font-size:12px}
+@media(max-width:900px){.hero{min-height:72vh}.hero h1{font-size:44px}}
+@media(prefers-reduced-motion:reduce){.hero-bg{animation:none}.hero .badge-free,.hero h1,.hero p.sub,.hero-stats{animation:none;opacity:1;transform:none}.reveal{opacity:1;transform:none;transition:none}}
 </style>
 </head>
 <body>
@@ -1291,6 +1346,17 @@ function initCookieBanner(){
   document.body.appendChild(d);
 }
 function ckOk(){try{localStorage.setItem('mc_cookies','ok')}catch(e){}document.getElementById('ckb')?.remove()}
+
+/* ---------- Microanimaciones de aparición (solo estética; se degrada sin efecto si falla) ---------- */
+(function(){
+  try{
+    const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('vis');io.unobserve(e.target)}}),{threshold:.08});
+    const arm=()=>{document.querySelectorAll('.block, .grid-cars .car-card, .searchbox').forEach(el=>{if(!el.classList.contains('reveal')&&!el.classList.contains('vis')){el.classList.add('reveal');io.observe(el)}})};
+    const app=document.getElementById('app');
+    if(app)new MutationObserver(arm).observe(app,{childList:true});
+    arm();
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
