@@ -552,6 +552,7 @@ footer.foot{border-top:1px solid rgba(255,255,255,.08)}
     <nav class="nav-links">
       <a onclick="go('results')">Comprar</a>
       <a onclick="go('publish')">Vender</a>
+      <a href="/importar" style="text-decoration:none">Importar stock</a>
       
       <a onclick="go('home');setTimeout(()=>document.getElementById('why')?.scrollIntoView({behavior:'smooth'}),50)">Por qué gratis</a>
     </nav>
@@ -572,7 +573,7 @@ footer.foot{border-top:1px solid rgba(255,255,255,.08)}
         <p>El portal donde publicar tu coche es <b>gratis</b>. Sin comisiones ni cuotas para empezar. Pensado para particulares y concesionarios que quieren vender sin pagar de más.</p>
       </div>
       <div class="foot-col"><h5>Comprar</h5><a onclick="go('results')">Todos los coches</a><a onclick="quickBrand('BMW')">BMW</a><a onclick="quickBrand('Audi')">Audi</a><a onclick="quickBrand('Volkswagen')">Volkswagen</a></div>
-      <div class="foot-col"><h5>Vender</h5><a onclick="go('publish')">Publicar anuncio</a><a onclick="go('dashboard')">Mi panel</a></div>
+      <div class="foot-col"><h5>Vender</h5><a onclick="go('publish')">Publicar anuncio</a><a href="/importar" style="text-decoration:none">Importar stock (profesionales)</a><a onclick="go('dashboard')">Mi panel</a></div>
       <div class="foot-col"><h5>MercaCoches</h5><a onclick="go('home')">Inicio</a><a href="mailto:mart17yusef@gmail.com" style="text-decoration:none">Contacto</a><a href="/terminos" style="text-decoration:none">Normas de uso</a></div>
     </div>
     <div class="foot-bottom">
@@ -678,7 +679,7 @@ function toggleMenu(e){
   const mnu=document.getElementById('userMenu');
   if(!mnu.classList.contains('hidden')){mnu.classList.add('hidden');return}
   mnu.innerHTML=`<div style="padding:10px 12px"><b>${me.name}</b><br><span style="font-size:13px;color:var(--muted)">${me.type==='pro'?'Concesionario':'Particular'} · Plan ${me.plan}</span></div><hr>
-    <a onclick="go('dashboard')">▤ Mi panel</a><a onclick="go('publish')">＋ Publicar coche</a>
+    <a onclick="go('dashboard')">▤ Mi panel</a><a onclick="go('publish')">＋ Publicar coche</a><a href="/importar" style="text-decoration:none">⇪ Importar stock</a>
     <a onclick="go('favorites')">♥ Favoritos (${favIds.size})</a><a onclick="go('messages')">✉ Mensajes</a><a onclick="openMyAlerts()">🔔 Mis alertas</a>
     ${me.role==='admin'?`<hr><a onclick="go('admin')" style="color:var(--danger);font-weight:700">⚙ Administración</a>`:''}
     <hr><a onclick="logout()">⏻ Cerrar sesión</a>`;
@@ -1038,7 +1039,7 @@ async function renderPublish(){
   if(!pubDraft)pubDraft={brand:'',model:'',year:'',fuel:'',gear:'',body:'',price:'',km:'',power:'',color:'',province:'',doors:5,seats:5,photos:[],desc:'',extras:[],warranty:false,noAccidents:false};
   const steps=['Datos básicos','Detalles','Fotos','Precio y publicar'];
   document.getElementById('app').innerHTML=`<div class="container"><div class="wizard">
-    <div class="plan-note"><span class="em">🎉</span><div>Estás publicando con el plan <b>Gratis</b>. Sin coste, sin límite de anuncios, sin permanencia.</div></div>
+    <div class="plan-note"><span class="em">🎉</span><div>Estás publicando con el plan <b>Gratis</b>. Sin coste, sin límite de anuncios, sin permanencia. ¿Tienes muchos coches? <a href="/importar" style="color:var(--rojo);font-weight:700">Importa todo tu stock de una vez →</a></div></div>
     <div class="wiz-steps">${steps.map((s,i)=>`<div class="wstep ${i===pubStep?'active':''} ${i<pubStep?'done':''}"><span class="n">${i<pubStep?'✓':i+1}</span><span>${s}</span></div>`).join('')}</div>
     <div class="wiz-card" id="wizCard"></div>
   </div></div>`;
@@ -1107,7 +1108,7 @@ async function renderDashboard(){
   const totalViews=cars.reduce((s,c)=>s+c.views,0);
   const active=cars.filter(c=>c.status==='active').length;
   document.getElementById('app').innerHTML=`<div class="container"><div class="dash-layout">
-    <aside class="dash-side"><a class="active" onclick="go('dashboard')">▤ Mis anuncios</a><a onclick="go('publish')">＋ Publicar coche</a><a onclick="go('favorites')">♥ Favoritos</a><a onclick="openMyAlerts()">🔔 Mis alertas</a><a onclick="go('messages')">✉ Mensajes ${threads.length?`(${threads.length})`:''}</a><a onclick="logout()">⏻ Cerrar sesión</a></aside>
+    <aside class="dash-side"><a class="active" onclick="go('dashboard')">▤ Mis anuncios</a><a onclick="go('publish')">＋ Publicar coche</a><a href="/importar" style="text-decoration:none">⇪ Importar stock</a><a onclick="go('favorites')">♥ Favoritos</a><a onclick="openMyAlerts()">🔔 Mis alertas</a><a onclick="go('messages')">✉ Mensajes ${threads.length?`(${threads.length})`:''}</a><a onclick="logout()">⏻ Cerrar sesión</a></aside>
     <div>
       <div class="section-head"><div><h2>Hola, ${me.name.split(' ')[0]} 👋</h2><p>${me.type==='pro'?'Panel de concesionario':'Tu panel de vendedor'} · Plan ${me.plan}</p></div><button class="btn btn-accent" onclick="go('publish')">＋ Publicar coche</button></div>
       <div class="dash-stats">
