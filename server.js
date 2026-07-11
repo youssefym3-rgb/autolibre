@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.AUTOLIBRE_DATA || path.join(__dirname, 'data');
 const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
 const BASE_URL = (process.env.BASE_URL || 'https://mercacoches.es').replace(/\/$/, '');
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL || 'mart17yusef@gmail.com';
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL || 'info@mercacoches.es';
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 seedIfEmpty();
@@ -1194,7 +1194,7 @@ async function saveAndSync(){
     const {id}=await API('/feeds',{method:'POST',body:feed});
     const syncBody=type==='url'?{}:{text:document.getElementById('ftext').value};
     const {report}=await API('/feeds/'+id+'/sync',{method:'POST',body:syncBody});
-    alert('Importación completada:\\n'+report.created+' creados · '+report.updated+' actualizados · '+report.sold+' marcados como vendidos'+(report.errors&&report.errors.length?'\\n'+report.errors.length+' con errores':''));
+    alert('Importación completada:\n'+report.created+' creados · '+report.updated+' actualizados · '+report.sold+' marcados como vendidos'+(report.errors&&report.errors.length?'\n'+report.errors.length+' con errores':''));
     EDIT_ID=null;window._editMap=null;document.getElementById('mapCard').classList.add('hidden');
     loadFeeds();
   }catch(e){alert('Error: '+e.message);}
