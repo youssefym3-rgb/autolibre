@@ -7,6 +7,13 @@ const path = require('node:path');
 const DATA_DIR = process.env.AUTOLIBRE_DATA || path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 const db = new DatabaseSync(path.join(DATA_DIR, 'autolibre.db'));
+/* Rendimiento: WAL permite leer mientras se escribe (importaciones masivas de
+   stock no bloquean la web) y acelera mucho las escrituras en lote. */
+try {
+  db.exec('PRAGMA journal_mode = WAL');
+  db.exec('PRAGMA synchronous = NORMAL');
+  db.exec('PRAGMA busy_timeout = 5000');
+} catch (e) { console.error('[db] pragmas:', e.message); }
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS users(

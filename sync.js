@@ -34,9 +34,7 @@ const HINTS = {
   photos: ['fotos', 'photos', 'imagenes', 'images', 'imagen', 'image', 'foto', 'url_imagenes'],
   extras: ['extras', 'equipamiento', 'options', 'equipment']
 };
-/* Normaliza texto para comparar nombres de columna: quita tildes/ñ y símbolos
-   ("Año", "año", "AÑO", "precio_€" → "ano", "ano", "ano", "precio"). */
-const normTxt = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+const normTxt = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
 function suggestMapping(columns) {
   const map = {};
   const low = columns.map(c => ({ raw: c, norm: normTxt(c) }));
@@ -128,17 +126,30 @@ async function runSync(feedId, opts = {}) {
     const rows = await connectors.parse(feed.type, { source: feed.source, text: opts.text, item_path: feed.item_path });
     report.total = rows.length;
     const seenRefs = new Set();
-    for (const raw of rows) {
-      const car = normalize(raw, mapping);
-      const err = validate(car);
-      if (err) { if (report.errors.length < 50) report.errors.push({ ref: car.external_ref || '?', error: err }); continue; }
-      seenRefs.add(car.external_ref);
-      car.owner_id = feed.owner_id; car.feed_id = feedId; car.seller_type = seller_type;
+    /* Se procesa por lotes dentro de una transacción: importar miles de coches
+       pasa de decenas de segundos a segundos, y la web sigue respondiendo. */
+    const BATCH = 500;
+    for (let i = 0; i < rows.length; i += BATCH) {
+      const chunk = rows.slice(i, i + BATCH);
+      store.begin();
       try {
-        const existing = await store.findCarIdByRef(feed.owner_id, car.external_ref);
-        if (existing) { await store.updateCarFromFeed(existing, car); report.updated++; }
-        else { await store.insertCar(car); report.created++; }
-      } catch (e) { if (report.errors.length < 50) report.errors.push({ ref: car.external_ref, error: e.message }); }
+        for (const raw of chunk) {
+          const car = normalize(raw, mapping);
+          const err = validate(car);
+          if (err) { if (report.errors.length < 50) report.errors.push({ ref: car.external_ref || '?', error: err }); continue; }
+          seenRefs.add(car.external_ref);
+          car.owner_id = feed.owner_id; car.feed_id = feedId; car.seller_type = seller_type;
+          try {
+            const existing = await store.findCarIdByRef(feed.owner_id, car.external_ref);
+            if (existing) { await store.updateCarFromFeed(existing, car); report.updated++; }
+            else { await store.insertCar(car); report.created++; }
+          } catch (e) { if (report.errors.length < 50) report.errors.push({ ref: car.external_ref, error: e.message }); }
+        }
+        store.commit();
+      } catch (e) {
+        store.rollback();
+        throw e;
+      }
     }
     // Bajas: coches activos del feed que ya NO aparecen → marcar como vendidos
     const active = await store.activeRefsByFeed(feedId);
@@ -198,4 +209,4 @@ function startScheduler(everyMs = 60000) {
 }
 
 module.exports = { previewFeed, runSync, queue, startScheduler, suggestMapping, FIELDS };
-/* fin del módulo de sincronización · v1.0.1 */
+/* fin del módulo de sincronización */

@@ -957,7 +957,11 @@ const PRICE_PAGES = [5000, 10000, 15000, 20000, 30000];
 function ssrListPage(res, opts) {
   const brand = opts.brand || '', province = opts.province || '';
   const fuel = opts.fuel || '', priceMax = opts.priceMax || 0;
-  const rows = queryCars({ brand, province, fuels: fuel ? [fuel] : undefined, priceMax: priceMax || '', sort: 'recent' }).map(carOut);
+  /* carOut() consulta la BD por cada coche (vendedor + etiqueta de precio):
+     aplicarlo a miles de anuncios para pintar 48 tarjetas era el cuello de
+     botella de esta página. Solo se transforman los que se muestran. */
+  const raw = queryCars({ brand, province, fuels: fuel ? [fuel] : undefined, priceMax: priceMax || '', sort: 'recent' });
+  const rows = raw;
   const fuelEntry = fuel ? FUEL_PAGES.find(f => f[1] === fuel) : null;
   let pathUrl = '/coches';
   if (brand) pathUrl += '/' + slugify(brand);
@@ -974,7 +978,7 @@ function ssrListPage(res, opts) {
   const desc = rows.length
     ? `${rows.length} anuncios: ${what.toLowerCase()}${where}. Compra directamente al vendedor: publicar es gratis y sin comisiones en MercaCoches.`
     : `Compra y vende ${brand || 'coches'}${where} de segunda mano. Publicar tu anuncio es gratis y sin comisiones en MercaCoches.`;
-  const shown = rows.slice(0, 48);
+  const shown = raw.slice(0, 48).map(carOut);
   const jsonld = {
     '@context': 'https://schema.org', '@type': 'ItemList',
     name: `${what}${where}`, numberOfItems: rows.length,

@@ -765,9 +765,15 @@ function carCard(c){
 
 /* ---------- HOME ---------- */
 async function renderHome(){
-  const {cars}=await API('/cars',{auth:false});
+  /* Solo pedimos lo que se muestra (antes se descargaba el catálogo entero:
+     con miles de coches eran megas de JSON en cada visita). */
+  const [rel,rec]=await Promise.all([
+    API('/cars?limit=8&sort=relevance',{auth:false}),
+    API('/cars?limit=4&sort=recent',{auth:false})
+  ]);
+  const cars=rel.cars;
   const featured=cars.filter(c=>c.featured).slice(0,4);
-  const recent=[...cars].sort((a,b)=>b.created-a.created).slice(0,4);
+  const recent=rec.cars.slice(0,4);
   document.getElementById('app').innerHTML=`
   <div class="ticker">
     <div class="ticker-label">Novedades</div>
@@ -871,8 +877,10 @@ function buildQuery(){
   for(const k in filters){const v=filters[k];if(v==null||v==='')continue;if(Array.isArray(v)){if(v.length)p.set(k,v.join(','))}else p.set(k,v)}
   return p.toString();
 }
+const PAGE=24;
+let shownCount=PAGE;
 async function renderResults(){
-  const {cars,total}=await API('/cars?'+buildQuery(),{auth:false});
+  const {cars,total}=await API('/cars?'+buildQuery()+'&limit='+shownCount+'&offset=0',{auth:false});
   const f=filters;
   document.getElementById('app').innerHTML=`<div class="container"><div class="results-layout">
     <aside class="filters">
@@ -914,22 +922,24 @@ async function renderResults(){
             <option value="year-desc" ${f.sort==='year-desc'?'selected':''}>Más nuevos</option>
             <option value="recent" ${f.sort==='recent'?'selected':''}>Más recientes</option>
           </select></div></div>
-      ${cars.length?`<div class="grid-results">${cars.map(carCard).join('')}</div>`:`<div class="empty-state"><div class="em">🔍</div><h3>No hay coches con estos filtros</h3><button class="btn btn-primary" onclick="clearFilters()">Limpiar filtros</button></div>`}
+      ${cars.length?`<div class="grid-results">${cars.map(carCard).join('')}</div>
+      ${total>cars.length?`<div style="text-align:center;margin:28px 0"><button class="btn btn-primary" onclick="loadMore()">Ver más coches (${fmt(total-cars.length)} restantes)</button></div>`:''}`:`<div class="empty-state"><div class="em">🔍</div><h3>No hay coches con estos filtros</h3><button class="btn btn-primary" onclick="clearFilters()">Limpiar filtros</button></div>`}
     </div>
   </div></div>`;
   fillFModels();
 }
-function setF(k,v){if(v===''||v==null)delete filters[k];else filters[k]=v;renderResults()}
-function toggleArr(k,v){filters[k]=filters[k]||[];v=String(v);const i=filters[k].indexOf(v);if(i>=0)filters[k].splice(i,1);else filters[k].push(v);renderResults()}
-function toggleBool(k){if(filters[k])delete filters[k];else filters[k]=true;renderResults()}
-function clearFilters(){filters={};renderResults()}
+function loadMore(){shownCount+=PAGE;renderResults()}
+function setF(k,v){if(v===''||v==null)delete filters[k];else filters[k]=v;shownCount=PAGE;renderResults()}
+function toggleArr(k,v){filters[k]=filters[k]||[];v=String(v);const i=filters[k].indexOf(v);if(i>=0)filters[k].splice(i,1);else filters[k].push(v);shownCount=PAGE;renderResults()}
+function toggleBool(k){if(filters[k])delete filters[k];else filters[k]=true;shownCount=PAGE;renderResults()}
+function clearFilters(){filters={};shownCount=PAGE;renderResults()}
 function fillFModels(){const b=filters.brand;const m=document.getElementById('fModel');if(!m)return;m.innerHTML='<option value="">Todos</option>'+(b&&BRANDS[b]?BRANDS[b].map(x=>`<option ${filters.model===x?'selected':''}>${x}</option>`).join(''):'')}
 
 /* ---------- DETALLE ---------- */
 function openDetail(id){currentDetail=id;go('detail')}
 async function renderDetail(){
   const {car:c}=await API('/cars/'+currentDetail,{auth:false});
-  let similar=[];try{const r=await API('/cars?bodies='+encodeURIComponent(c.body),{auth:false});similar=r.cars.filter(x=>x.id!==c.id).slice(0,4);}catch(e){}
+  let similar=[];try{const r=await API('/cars?limit=5&bodies='+encodeURIComponent(c.body),{auth:false});similar=r.cars.filter(x=>x.id!==c.id).slice(0,4);}catch(e){}
   const u=c.owner||{};
   const photos=c.photos||[];
   const mainImg=photos.length?`<img src="${photos[0]}" id="mainImg" style="width:100%;height:100%;object-fit:cover">`:`<div class="placeholder">🚗</div>`;
