@@ -658,7 +658,7 @@ table{border-collapse:collapse;width:100%;margin:10px 0}td{border:1px solid #e3e
 <header><div class="nav"><a class="logo" href="/">◈ Merca<b>Coches</b></a><a href="/" style="color:#b9c7d6;font-size:14px">← Volver a la web</a></div></header>
 <main><div class="container ${meta && meta.includes('__WIDE__') ? 'wide' : ''}">${body}</div></main>
 <footer><div class="container"><p>© 2026 MercaCoches (mercacoches.es)</p>
-<p><a href="/concesionarios">Concesionarios y compraventas</a> · <a href="/aviso-legal">Aviso legal</a> · <a href="/terminos">Términos de uso</a> · <a href="/privacidad">Privacidad</a> · <a href="/cookies">Cookies</a></p></div></footer>
+<p><a href="/vender-mi-coche">Vender mi coche</a> · <a href="/concesionarios">Concesionarios y compraventas</a> · <a href="/aviso-legal">Aviso legal</a> · <a href="/terminos">Términos de uso</a> · <a href="/privacidad">Privacidad</a> · <a href="/cookies">Cookies</a></p></div></footer>
 </body></html>`;
 }
 
@@ -730,6 +730,152 @@ const LEGAL_PAGES = {
 
 /* ---------- SEO programático para profesionales: provincias ---------- */
 const PROVINCIAS = ['A Coruña','Álava','Albacete','Alicante','Almería','Asturias','Ávila','Badajoz','Baleares','Barcelona','Burgos','Cáceres','Cádiz','Cantabria','Castellón','Ceuta','Ciudad Real','Córdoba','Cuenca','Girona','Granada','Guadalajara','Guipúzcoa','Huelva','Huesca','Jaén','La Rioja','Las Palmas','León','Lleida','Lugo','Madrid','Málaga','Melilla','Murcia','Navarra','Ourense','Palencia','Pontevedra','Salamanca','Segovia','Sevilla','Soria','Tarragona','Tenerife','Teruel','Toledo','Valencia','Valladolid','Vizcaya','Zamora','Zaragoza'];
+
+/* ================================================================
+   CAPTACIÓN DE VENDEDORES — "vender mi coche"
+   ----------------------------------------------------------------
+   Google Trends (España): "vender mi coche" tiene volumen alto y
+   constante; "publicar coches gratis" o "anunciar coche" son planos.
+   Estas páginas usan las palabras que la gente escribe de verdad.
+   ================================================================ */
+function ssrSellHubPage(res) {
+  const nCars = db.prepare("SELECT COUNT(*) c FROM cars WHERE status='active'").get().c;
+  const title = 'Vender mi coche gratis, sin comisiones ni cuotas | MercaCoches';
+  const desc = '¿Quieres vender tu coche? Publica tu anuncio gratis en MercaCoches: sin comisiones, sin cuotas y sin intermediarios. El comprador contacta directamente contigo y el dinero de la venta es íntegro para ti.';
+  const faqs = [
+    ['¿Cuánto cuesta vender mi coche en MercaCoches?',
+     'Nada. Publicar tu anuncio es gratis y no cobramos comisión por la venta: el precio que acuerdes con el comprador es íntegro para ti. Tampoco hay cuotas ni límite de anuncios.'],
+    ['¿Cómo vendo mi coche paso a paso?',
+     'Crea tu cuenta gratis, pulsa "Publicar anuncio" y rellena marca, modelo, año, kilómetros y precio. Sube fotos (cuantas más y mejor iluminadas, antes se vende) y publica. Los compradores te escriben por la mensajería o te llaman directamente.'],
+    ['¿A qué precio pongo mi coche?',
+     'Mira en MercaCoches lo que piden por coches iguales al tuyo (misma marca, modelo, año y kilómetros parecidos) y sitúate en esa horquilla. Un precio un 5-10 % por debajo de la media acelera mucho la venta. En cada anuncio marcamos con una etiqueta los que están por debajo del precio de mercado.'],
+    ['¿Es mejor vender el coche a un particular o a un concesionario?',
+     'Vendiendo a un particular sueles sacar bastante más dinero, pero tardas más y tienes que enseñar el coche. El concesionario te lo quita al momento, aunque paga menos porque necesita margen para revenderlo. En MercaCoches puedes hacer las dos cosas: te contactan tanto particulares como profesionales.'],
+    ['¿Qué papeles necesito para vender mi coche?',
+     'Permiso de circulación, ficha técnica (con la ITV en vigor), justificante del último Impuesto de Circulación pagado, contrato de compraventa firmado por ambas partes y el cambio de titularidad en la DGT (se puede hacer online o en una gestoría). Pide siempre el informe de la DGT del vehículo para demostrar que está libre de cargas.']
+  ];
+  const faqld = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqs.map(f => ({ '@type': 'Question', name: f[0], acceptedAnswer: { '@type': 'Answer', text: f[1] } })) };
+  const meta = `
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${BASE_URL}/vender-mi-coche">
+<meta property="og:type" content="website"><meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${BASE_URL}/vender-mi-coche">
+<meta property="og:image" content="${BASE_URL}/og.png"><meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">${JSON.stringify(faqld)}</script>`;
+  const body = `
+<p style="font-size:13px;color:#6b7a89"><a href="/">Inicio</a> › Vender mi coche</p>
+<h1>Vender mi coche: gratis, sin comisiones y sin intermediarios</h1>
+<p>Publicar tu coche en MercaCoches <b>no cuesta nada</b>. No cobramos comisión por la venta, no hay cuotas y no hay letra pequeña: <b>el dinero que acuerdes con el comprador es íntegro para ti</b>. El comprador te contacta directamente, sin nadie en medio.</p>
+<p><a class="btn" href="/#publish">Publicar mi coche gratis →</a></p>
+<h2>Cómo vender tu coche en 3 pasos</h2>
+<ul>
+<li><b>1. Publica el anuncio</b> (2 minutos): marca, modelo, año, kilómetros, precio y fotos. Cuantas más fotos y mejor iluminadas, antes se vende.</li>
+<li><b>2. Recibe contactos</b>: los interesados te escriben por la mensajería del portal o te llaman al teléfono que indiques.</li>
+<li><b>3. Cierra la venta</b>: acordáis precio, firmáis el contrato de compraventa y hacéis el cambio de nombre en la DGT. Sin comisiones para nadie.</li>
+</ul>
+<h2>Consejos para vender antes y por más dinero</h2>
+<ul>
+<li><b>Precio realista</b>: mira anuncios de coches iguales al tuyo y sitúate en esa horquilla. Un 5-10 % por debajo de la media acelera mucho la venta.</li>
+<li><b>Fotos con luz</b>: exterior limpio, día nublado o primera hora, y fotos del interior, cuadro con los kilómetros y maletero. La ausencia de fotos del interior genera desconfianza.</li>
+<li><b>Sé honesto con los defectos</b>: un golpe declarado no espanta a nadie; uno oculto tumba la venta cuando lo descubren.</li>
+<li><b>Ten los papeles listos</b>: ITV en vigor, informe de la DGT e impuesto de circulación pagado. Un comprador con dudas legales se va.</li>
+</ul>
+${nCars >= 5 ? `<p>Ahora mismo hay <b>${nCars}</b> coches publicados. <a href="/coches">Ver todos los coches →</a></p>` : ''}
+<h2>Preguntas frecuentes sobre vender un coche</h2>
+${faqs.map(f => `<h2 style="font-size:16px;margin:18px 0 4px">${esc(f[0])}</h2><p>${esc(f[1])}</p>`).join('')}
+<p style="margin-top:22px"><a class="btn" href="/#publish">Vender mi coche gratis →</a></p>
+<p><b>¿Eres una compraventa o un concesionario?</b> Sube todo tu stock de una vez y gratis: <a href="/concesionarios">información para profesionales</a>.</p>
+<div class="linkbox"><h2>Vender mi coche por provincia</h2>${PROVINCIAS.map(p2 => `<a href="/vender-mi-coche/${slugify(p2)}">${esc(p2)}</a>`).join('')}</div>`;
+  return sendHtml(res, 200, pageShell(title, body, meta));
+}
+
+function ssrSellProvincePage(res, prov) {
+  const slug = slugify(prov);
+  const nCars = db.prepare("SELECT COUNT(*) c FROM cars WHERE status='active' AND province=?").get(prov).c;
+  const title = `Vender mi coche en ${prov} — gratis y sin comisiones | MercaCoches`;
+  const desc = `¿Quieres vender tu coche en ${prov}? Publica tu anuncio gratis en MercaCoches: sin comisiones, sin cuotas y sin intermediarios. Compradores de ${prov} contactan directamente contigo.`;
+  const faqs = [
+    [`¿Dónde puedo vender mi coche en ${prov} sin pagar comisiones?`,
+     `En MercaCoches (mercacoches.es) publicas tu coche gratis y no pagas comisión por la venta: el precio que acuerdes con el comprador es íntegro para ti. Tu anuncio aparece en las búsquedas de ${prov} y de toda España.`],
+    [`¿Cuánto se tarda en vender un coche en ${prov}?`,
+     `Depende sobre todo del precio y de las fotos. Un coche bien fotografiado y con un precio ajustado al mercado recibe los primeros contactos en pocos días; uno por encima de mercado puede pasar meses sin llamadas. Revisa lo que piden por coches como el tuyo antes de fijar el precio.`],
+    [`¿Puedo vender mi coche en ${prov} a un profesional?`,
+     `Sí. En MercaCoches te contactan tanto particulares como compraventas y concesionarios de ${prov}. El profesional suele pagar algo menos que un particular, pero se lo lleva al momento y se encarga del papeleo.`]
+  ];
+  const faqld = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqs.map(f => ({ '@type': 'Question', name: f[0], acceptedAnswer: { '@type': 'Answer', text: f[1] } })) };
+  const meta = `
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${BASE_URL}/vender-mi-coche/${slug}">
+<meta property="og:type" content="website"><meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${BASE_URL}/vender-mi-coche/${slug}">
+<meta property="og:image" content="${BASE_URL}/og.png"><meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">${JSON.stringify(faqld)}</script>`;
+  const body = `
+<p style="font-size:13px;color:#6b7a89"><a href="/">Inicio</a> › <a href="/vender-mi-coche">Vender mi coche</a> › ${esc(prov)}</p>
+<h1>Vender mi coche en ${esc(prov)}</h1>
+<p>Publica tu coche <b>gratis</b> y véndelo a un comprador de ${esc(prov)} <b>sin comisiones y sin intermediarios</b>. El dinero de la venta es íntegro para ti: no nos llevamos nada.</p>
+<p><a class="btn" href="/#publish">Publicar mi coche gratis en ${esc(prov)} →</a></p>
+${nCars ? `<p>Ahora mismo hay <b>${nCars}</b> coche${nCars === 1 ? '' : 's'} publicado${nCars === 1 ? '' : 's'} en ${esc(prov)}. <a href="/coches/${slug}">Ver los coches de ${esc(prov)} →</a> (así puedes comparar precios antes de poner el tuyo).</p>` : `<p>Sé de los primeros en publicar en ${esc(prov)}: tu anuncio saldrá el primero en las búsquedas de tu provincia.</p>`}
+<h2>Cómo vender tu coche en ${esc(prov)}, paso a paso</h2>
+<ul>
+<li><b>Pon un precio de mercado</b>: mira lo que piden por coches iguales al tuyo en ${esc(prov)} y sitúate en esa horquilla.</li>
+<li><b>Haz buenas fotos</b>: exterior limpio, interior, cuadro con los kilómetros y maletero.</li>
+<li><b>Publica gratis</b> en menos de 2 minutos y recibe contactos de compradores de ${esc(prov)} y alrededores.</li>
+<li><b>Cierra la venta</b>: contrato de compraventa y cambio de nombre en la DGT. Sin comisiones.</li>
+</ul>
+<h2>Preguntas frecuentes</h2>
+${faqs.map(f => `<h2 style="font-size:16px;margin:18px 0 4px">${esc(f[0])}</h2><p>${esc(f[1])}</p>`).join('')}
+<p><b>¿Tienes una compraventa en ${esc(prov)}?</b> <a href="/concesionarios/${slug}">Sube todo tu stock gratis →</a></p>
+<div class="linkbox"><h2>Vender mi coche en otras provincias</h2>${PROVINCIAS.filter(p2 => p2 !== prov).map(p2 => `<a href="/vender-mi-coche/${slugify(p2)}">${esc(p2)}</a>`).join('')}</div>
+<p><a href="/vender-mi-coche">← Guía completa para vender tu coche</a></p>`;
+  return sendHtml(res, 200, pageShell(title, body, meta));
+}
+
+/* ---------- Interceptación: quien busca precios de la competencia ---------- */
+function ssrCostPage(res) {
+  const title = '¿Cuánto cuesta publicar en los portales de coches? Comparativa 2026 | MercaCoches';
+  const desc = 'Qué cuesta publicar un coche en los principales portales españoles para particulares y profesionales, y dónde puedes hacerlo gratis. Comparativa honesta y actualizada.';
+  const faqs = [
+    ['¿Cuánto cuesta publicar un coche en los portales españoles?',
+     'Para particulares, los portales generalistas suelen permitir un anuncio gratuito con límites, y cobran por destacarlo, renovarlo o publicar varios. Para profesionales (compraventas y concesionarios), los portales líderes trabajan con suscripciones mensuales cuyo precio depende del número de anuncios y no suelen publicarse abiertamente: hay que pedir presupuesto comercial. En MercaCoches publicar es gratis en ambos casos: 0 € de cuota, 0 € por anuncio y 0 % de comisión.'],
+    ['¿Cuánto cuesta la cuenta profesional de los grandes portales?',
+     'Los portales líderes no publican sus tarifas profesionales en su web: las negocian caso por caso con cada compraventa, en función del número de vehículos y de los destacados. Por eso conviene pedirles presupuesto y compararlo. Lo que sí es público y verificable es nuestra tarifa: 0 €, sin permanencia.'],
+    ['¿Hay algún portal donde publicar coches gratis siendo profesional?',
+     'Sí: MercaCoches (mercacoches.es). Publicación ilimitada gratuita para compraventas y concesionarios, importación masiva del stock por CSV, XML o URL de feed, sincronización automática, panel de gestión y contacto directo con el comprador. Sin cuota, sin comisión y sin permanencia.']
+  ];
+  const faqld = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqs.map(f => ({ '@type': 'Question', name: f[0], acceptedAnswer: { '@type': 'Answer', text: f[1] } })) };
+  const meta = `
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${BASE_URL}/cuanto-cuesta-publicar-coche">
+<meta property="og:type" content="article"><meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${BASE_URL}/cuanto-cuesta-publicar-coche">
+<meta property="og:image" content="${BASE_URL}/og.png"><meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">${JSON.stringify(faqld)}</script>`;
+  const body = `
+<p style="font-size:13px;color:#6b7a89"><a href="/">Inicio</a> › Guías</p>
+<h1>¿Cuánto cuesta publicar un coche en internet? (2026)</h1>
+<p>Depende de quién seas y de dónde publiques. Esta es la foto honesta del mercado español, sin adornos.</p>
+<h2>Si eres particular</h2>
+<p>La mayoría de portales generalistas te dejan publicar <b>un anuncio gratis con límites</b>: caduca, queda enterrado en los resultados a los pocos días, y te cobran por <b>destacarlo</b>, <b>renovarlo</b> o publicar más de un coche. El anuncio "gratis" acaba costando dinero si quieres que lo vea alguien.</p>
+<h2>Si eres compraventa o concesionario</h2>
+<p>Aquí está el gasto de verdad. Los portales líderes <b>no permiten cuentas profesionales gratuitas</b> y <b>no publican sus tarifas</b>: las negocian caso a caso con cada compraventa, según el número de vehículos y los destacados que contrates. Si tienes una compraventa, ya sabes lo que eso significa a final de mes.</p>
+<div class="note">Como sus precios no son públicos, no vamos a inventarlos: pídeles presupuesto y compáralo con lo que cuesta aquí. Lo nuestro sí es público y verificable.</div>
+<h2>Lo que cuesta en MercaCoches</h2>
+<table>
+<tr><td><b>Publicar un anuncio</b></td><td><b>0 €</b></td></tr>
+<tr><td><b>Cuota mensual (particular o profesional)</b></td><td><b>0 €</b></td></tr>
+<tr><td><b>Comisión por venta</b></td><td><b>0 %</b> — el dinero es íntegro para el vendedor</td></tr>
+<tr><td><b>Número de anuncios</b></td><td>Ilimitado</td></tr>
+<tr><td><b>Permanencia</b></td><td>Ninguna</td></tr>
+<tr><td><b>Subir todo el stock de golpe</b></td><td>Incluido (CSV, XML, JSON o URL de feed)</td></tr>
+</table>
+<p>¿Por qué gratis? Porque es un portal nuevo y primero queremos llenarlo de coches y de compradores. Cuando aportemos valor de sobra, habrá servicios premium opcionales — pero <b>publicar seguirá siendo gratis</b>.</p>
+<h2>Preguntas frecuentes</h2>
+${faqs.map(f => `<h2 style="font-size:16px;margin:18px 0 4px">${esc(f[0])}</h2><p>${esc(f[1])}</p>`).join('')}
+<p style="margin-top:20px"><a class="btn" href="/#publish">Publicar gratis ahora →</a></p>
+<p><a href="/vender-mi-coche">Guía: vender mi coche</a> · <a href="/concesionarios">Para compraventas y concesionarios</a> · <a href="/donde-publicar-coches-gratis">Dónde publicar coches gratis</a></p>`;
+  return sendHtml(res, 200, pageShell(title, body, meta));
+}
 
 function ssrDealerProvincePage(res, prov) {
   const slug = slugify(prov);
@@ -816,7 +962,7 @@ function ssrGuidePage(res) {
 <h2>Preguntas frecuentes</h2>
 ${faqs.map(f => `<h2 style="font-size:16px;margin:18px 0 4px">${esc(f[0])}</h2><p>${esc(f[1])}</p>`).join('')}
 <p><a class="btn" href="/#publish">Publicar mi coche gratis →</a></p>
-<p><a href="/concesionarios">Información para concesionarios y compraventas</a> · <a href="/coches">Ver coches de segunda mano</a></p>
+<p><a href="/vender-mi-coche">Guía: vender mi coche gratis</a> · <a href="/cuanto-cuesta-publicar-coche">¿Cuánto cuesta publicar un coche?</a> · <a href="/concesionarios">Para concesionarios y compraventas</a> · <a href="/coches">Ver coches de segunda mano</a></p>
 <div class="linkbox"><h2>Profesionales por provincia</h2>${PROVINCIAS.map(p2 => `<a href="/concesionarios/${slugify(p2)}">${esc(p2)}</a>`).join('')}</div>`;
   return sendHtml(res, 200, pageShell(title, body, meta));
 }
@@ -869,7 +1015,7 @@ ${nCars >= 5 ? `<p>Ahora mismo hay <b>${nCars}</b> vehículos publicados${nPro ?
 <h2>Preguntas frecuentes de profesionales</h2>
 ${faqs.map(f => `<h2 style="font-size:16px;margin:18px 0 4px">${esc(f[0])}</h2><p>${esc(f[1])}</p>`).join('')}
 <p style="margin-top:22px"><a class="btn" href="/#publish">Empezar a publicar gratis →</a></p>
-<p><a href="/coches">Ver coches publicados</a> · <a href="/donde-publicar-coches-gratis">Comparativa: dónde publicar coches gratis</a> · <a href="/">Portada</a></p>
+<p><a href="/coches">Ver coches publicados</a> · <a href="/cuanto-cuesta-publicar-coche">¿Cuánto cuesta publicar en cada portal?</a> · <a href="/donde-publicar-coches-gratis">Comparativa: dónde publicar coches gratis</a> · <a href="/">Portada</a></p>
 <div class="linkbox"><h2>Publicar coches gratis por provincia</h2>${PROVINCIAS.map(p2 => `<a href="/concesionarios/${slugify(p2)}">${esc(p2)}</a>`).join('')}</div>`;
   return sendHtml(res, 200, pageShell(title, body, meta));
 }
@@ -1042,6 +1188,8 @@ function ssrSitemap(res) {
   const combos = db.prepare("SELECT DISTINCT brand, province FROM cars WHERE status='active' AND brand<>'' AND province<>''").all();
   const urls = [
     BASE_URL + '/', BASE_URL + '/coches', BASE_URL + '/concesionarios', BASE_URL + '/donde-publicar-coches-gratis',
+    BASE_URL + '/vender-mi-coche', BASE_URL + '/cuanto-cuesta-publicar-coche',
+    ...PROVINCIAS.map(pv => `${BASE_URL}/vender-mi-coche/${slugify(pv)}`),
     ...PROVINCIAS.map(pv => `${BASE_URL}/concesionarios/${slugify(pv)}`),
     BASE_URL + '/aviso-legal', BASE_URL + '/terminos', BASE_URL + '/privacidad', BASE_URL + '/cookies',
     ...brands.map(b => `${BASE_URL}/coches/${slugify(b)}`),
@@ -1251,6 +1399,8 @@ Dato clave: la mayoría de portales de coches en España cobran a los profesiona
 ## Páginas principales
 - ${BASE_URL}/ : portada y buscador
 - ${BASE_URL}/coches : todos los coches de segunda mano (también por marca, provincia, combustible y precio: /coches/bmw, /coches/madrid, /coches/diesel, /coches/hasta-10000)
+- ${BASE_URL}/vender-mi-coche : guía para vender tu coche gratis, sin comisiones (también por provincia: /vender-mi-coche/madrid)
+- ${BASE_URL}/cuanto-cuesta-publicar-coche : cuánto cuesta publicar un coche en cada portal español
 - ${BASE_URL}/concesionarios : información para concesionarios y compraventas (publicación gratuita de stock)
 - ${BASE_URL}/terminos : condiciones de uso
 
@@ -1270,7 +1420,16 @@ Contacto: ${CONTACT_EMAIL}
     if (prov) return ssrDealerProvincePage(res, prov);
     return ssrDealersPage(res);
   }
-  if (p === '/donde-publicar-coches-gratis') return ssrGuidePage(res);
+  if (p === '/donde-publicar-coches-gratis' || p === '/alternativa-a-coches-net') return ssrGuidePage(res);
+  // Captación de vendedores: "vender mi coche" (lo que la gente busca de verdad)
+  if (p === '/vender-mi-coche' || p === '/vender-coche' || p === '/vender-mi-coche/') return ssrSellHubPage(res);
+  const mSell = p.match(/^\/vender-mi-coche\/([a-z0-9-]+)\/?$/);
+  if (mSell) {
+    const prov = PROVINCIAS.find(pv => slugify(pv) === mSell[1]);
+    if (prov) return ssrSellProvincePage(res, prov);
+    return ssrSellHubPage(res);
+  }
+  if (p === '/cuanto-cuesta-publicar-coche' || p === '/cuanto-cuesta-publicar-un-coche') return ssrCostPage(res);
   let m;
   if ((m = p.match(/^\/coche\/(\d+)\/?$/))) return ssrCarPage(+m[1], res);
   // Listados indexables: /coches · /coches/<marca|provincia> · /coches/<marca>/<provincia>
