@@ -11,6 +11,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { db, hashPassword, verifyPassword, seedIfEmpty } = require('./db.js');
+/* Subsistema de importación/sincronización de stock (modular, swap-ready) */
+const store = require('./store.js');
+const sync = require('./sync.js');
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.AUTOLIBRE_DATA || path.join(__dirname, 'data');
@@ -426,6 +429,55 @@ async function api(req, res, url) {
     return send(res, 200, { cars: rows.map(carOut) });
   }
 
+  // ----- IMPORTACIÓN / SINCRONIZACIÓN DE STOCK (feeds) -----
+  // Vista previa: analiza el feed y devuelve columnas + muestra + mapeo sugerido
+  if (p === '/api/feeds/preview' && method === 'POST') {
+    const u = auth(req); if (!u) return send(res, 401, { error: 'Inicia sesión' });
+    const b = await readBody(req);
+    try {
+      const prev = await sync.previewFeed({ type: b.type, source: b.source, text: b.text, item_path: b.item_path });
+      return send(res, 200, prev);
+    } catch (e) { return send(res, 400, { error: e.message }); }
+  }
+  if (p === '/api/feeds' && method === 'GET') {
+    const u = auth(req); if (!u) return send(res, 401, { error: 'No autenticado' });
+    const feeds = (await store.listFeeds(u.id)).map(f => ({
+      id: f.id, name: f.name, type: f.type, source: f.source, auto: !!f.auto,
+      interval_min: f.interval_min, mapping: JSON.parse(f.mapping || '{}'), item_path: f.item_path,
+      last_sync: f.last_sync, status: f.status, last_result: JSON.parse(f.last_result || '{}')
+    }));
+    return send(res, 200, { feeds });
+  }
+  if (p === '/api/feeds' && method === 'POST') {
+    const u = auth(req); if (!u) return send(res, 401, { error: 'Inicia sesión' });
+    const b = await readBody(req);
+    if (b.id) {
+      const f = await store.getFeed(+b.id);
+      if (!f || f.owner_id !== u.id) return send(res, 403, { error: 'No es tu feed' });
+      await store.updateFeed(+b.id, { name: b.name, type: b.type, source: b.source || '', mapping: b.mapping || {}, item_path: b.item_path || '', auto: b.auto, interval_min: +b.interval_min || 360, next_sync: b.auto ? Date.now() + (+b.interval_min || 360) * 60000 : 0 });
+      return send(res, 200, { id: +b.id });
+    }
+    const id = await store.createFeed({ owner_id: u.id, name: b.name, type: b.type, source: b.source || '', mapping: b.mapping || {}, item_path: b.item_path || '', auto: b.auto, interval_min: +b.interval_min || 360 });
+    if (b.auto) await store.updateFeed(id, { next_sync: Date.now() + (+b.interval_min || 360) * 60000 });
+    return send(res, 201, { id });
+  }
+  if ((m = p.match(/^\/api\/feeds\/(\d+)$/)) && method === 'DELETE') {
+    const u = auth(req); if (!u) return send(res, 401, { error: 'No autenticado' });
+    const f = await store.getFeed(+m[1]);
+    if (!f || f.owner_id !== u.id) return send(res, 403, { error: 'No es tu feed' });
+    await store.deleteFeed(+m[1]);
+    return send(res, 200, { ok: true });
+  }
+  // Sincronización/importación manual. Para feeds de archivo se pasa {text}.
+  if ((m = p.match(/^\/api\/feeds\/(\d+)\/sync$/)) && method === 'POST') {
+    const u = auth(req); if (!u) return send(res, 401, { error: 'No autenticado' });
+    const f = await store.getFeed(+m[1]);
+    if (!f || f.owner_id !== u.id) return send(res, 403, { error: 'No es tu feed' });
+    const b = await readBody(req);
+    try { const report = await sync.runSync(+m[1], { text: b.text }); return send(res, 200, { report }); }
+    catch (e) { return send(res, 400, { error: e.message }); }
+  }
+
   // ----- ALERTS (búsquedas guardadas con aviso por email) -----
   if (p === '/api/alerts' && method === 'GET') {
     const u = auth(req); if (!u) return send(res, 401, { error: 'No autenticado' });
@@ -810,8 +862,9 @@ function ssrDealersPage(res) {
 </table>
 <h2>Cómo empezar (2 minutos)</h2>
 <p>1. Crea tu cuenta profesional gratis en <a href="/">mercacoches.es</a>.<br>
-2. Publica tus coches desde tu panel, o <b>envíanos tu stock y te lo subimos nosotros gratis</b>: <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>.<br>
+2. <b>Importa todo tu stock de una vez</b> desde <a href="/importar">la herramienta de importación</a> (CSV, XML, JSON o URL de feed de tu programa de gestión), o <b>envíanos tu stock y te lo subimos nosotros gratis</b>: <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>.<br>
 3. Los compradores contactan directamente contigo. Sin intermediarios.</p>
+<p><a class="btn" href="/importar">Importar y sincronizar mi stock →</a></p>
 ${nCars >= 5 ? `<p>Ahora mismo hay <b>${nCars}</b> vehículos publicados${nPro ? ` y <b>${nPro}</b> vendedores profesionales ya activos` : ''}.</p>` : ''}
 <h2>Preguntas frecuentes de profesionales</h2>
 ${faqs.map(f => `<h2 style="font-size:16px;margin:18px 0 4px">${esc(f[0])}</h2><p>${esc(f[1])}</p>`).join('')}
@@ -820,6 +873,9 @@ ${faqs.map(f => `<h2 style="font-size:16px;margin:18px 0 4px">${esc(f[0])}</h2><
 <div class="linkbox"><h2>Publicar coches gratis por provincia</h2>${PROVINCIAS.map(p2 => `<a href="/concesionarios/${slugify(p2)}">${esc(p2)}</a>`).join('')}</div>`;
   return sendHtml(res, 200, pageShell(title, body, meta));
 }
+
+/* Une una foto (ruta local /uploads o URL remota http) al dominio para SSR. */
+const absUrl = pth => /^https?:\/\//i.test(pth) ? pth : (BASE_URL + pth);
 
 function ssrCarPage(id, res) {
   const c = db.prepare("SELECT * FROM cars WHERE id=? AND status='active'").get(id);
@@ -1007,6 +1063,165 @@ function serveStatic(res, filePath) {
   });
 }
 
+/* ---------- Panel del profesional: importar y sincronizar stock ---------- */
+function importPageHtml() {
+  return `<!DOCTYPE html><html lang="es"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Importar stock — MercaCoches para profesionales</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit','Segoe UI',system-ui,Arial,sans-serif;background:#0A0A0A;color:#F5F5F7;line-height:1.55}
+a{color:#ff6b6b}.wrap{max-width:960px;margin:0 auto;padding:24px 20px 80px}
+header{background:#0A0A0A;border-bottom:1px solid #2C2C2E;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+.logo{font-weight:800;font-size:20px}.logo b{color:#E8001D}
+h1{font-size:30px;letter-spacing:-.02em;margin:22px 0 6px}h2{font-size:20px;margin:26px 0 10px}
+.muted{color:#8a8a90}.card{background:#161618;border:1px solid #2C2C2E;border-radius:16px;padding:22px;margin-top:16px}
+label{display:block;font-size:13px;color:#aeaeb2;margin:12px 0 5px;font-weight:600}
+input,select,textarea{width:100%;background:#0f0f10;border:1px solid #2C2C2E;color:#F5F5F7;border-radius:10px;padding:11px 12px;font-family:inherit;font-size:15px}
+input:focus,select:focus,textarea:focus{outline:2px solid #E8001D;border-color:#E8001D}
+.btn{display:inline-flex;align-items:center;gap:8px;background:#E8001D;color:#fff;border:0;border-radius:100px;padding:12px 22px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;transition:.2s}
+.btn:hover{transform:translateY(-1px)}.btn:disabled{opacity:.5;cursor:default;transform:none}
+.btn-ghost{background:#2C2C2E;color:#F5F5F7}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+table{border-collapse:collapse;width:100%;margin-top:8px;font-size:13.5px}
+td,th{border:1px solid #2C2C2E;padding:7px 9px;text-align:left;vertical-align:top}
+th{color:#aeaeb2;font-weight:600}
+.pill{display:inline-block;padding:3px 10px;border-radius:100px;font-size:12px;font-weight:700}
+.ok{background:rgba(22,199,132,.15);color:#16c784}.err{background:rgba(255,77,77,.15);color:#ff6b6b}.run{background:rgba(245,166,35,.15);color:#f5a623}
+.map-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px}
+.stat{display:inline-block;background:#0f0f10;border:1px solid #2C2C2E;border-radius:10px;padding:10px 14px;margin:4px 8px 4px 0;font-size:14px}
+.stat b{font-size:20px;display:block}
+.hidden{display:none}
+small{color:#8a8a90}
+.steps{display:flex;gap:8px;margin:6px 0 4px;font-size:13px;color:#8a8a90;flex-wrap:wrap}
+.feed-item{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #2C2C2E;padding:12px 0}
+.feed-item:last-child{border:0}
+</style></head><body>
+<header><a class="logo" href="/">◈ Merca<b>Coches</b></a><a href="/" class="muted" style="text-decoration:none;font-size:14px">← Volver a la web</a></header>
+<div class="wrap">
+  <h1>Importar y sincronizar tu stock</h1>
+  <p class="muted">Sube tu inventario completo de una vez (CSV, XML, JSON o URL de feed) y mantenlo actualizado automáticamente. Publicar es gratis, sin límite de vehículos.</p>
+  <div id="needlogin" class="card hidden"><b>Inicia sesión como profesional</b><p class="muted" style="margin-top:6px">Para importar tu stock necesitas una cuenta. <a href="/#publish">Crear cuenta gratis o iniciar sesión →</a></p></div>
+
+  <div id="main" class="hidden">
+    <div class="card">
+      <h2 style="margin-top:0">1. Origen del stock</h2>
+      <div class="row">
+        <div><label>Tipo de fuente</label>
+          <select id="ftype" onchange="onType()">
+            <option value="url">URL de feed (XML/JSON/CSV) — recomendado</option>
+            <option value="csv">Archivo CSV (o pegar texto)</option>
+            <option value="xml">Archivo/texto XML</option>
+            <option value="json">Archivo/texto JSON</option>
+            <option value="xlsx">Excel (.xlsx)</option>
+          </select></div>
+        <div><label>Nombre del feed</label><input id="fname" placeholder="Mi stock" value="Mi stock"></div>
+      </div>
+      <div id="srcUrl"><label>URL del feed</label><input id="fsource" placeholder="https://tu-dms.com/export/stock.xml"><small>La URL de exportación de tu programa de gestión o multipublicador.</small></div>
+      <div id="srcFile" class="hidden">
+        <label>Sube el archivo o pega el contenido</label>
+        <input type="file" id="ffile" accept=".csv,.xml,.json,.txt" onchange="loadFile(event)" style="margin-bottom:8px">
+        <textarea id="ftext" rows="5" placeholder="…o pega aquí el contenido del archivo"></textarea>
+      </div>
+      <label style="margin-top:12px">Ruta a la lista de vehículos <small>(opcional; solo XML/JSON anidado, p. ej. <code>vehiculos.vehiculo</code>)</small></label>
+      <input id="fpath" placeholder="Se detecta automáticamente">
+      <div style="margin-top:16px"><button class="btn" id="btnPrev" onclick="preview()">Analizar feed →</button> <span id="prevMsg" class="muted"></span></div>
+    </div>
+
+    <div id="mapCard" class="card hidden">
+      <h2 style="margin-top:0">2. Mapea las columnas</h2>
+      <p class="muted">Detectamos <b id="detCount">0</b> vehículos. Asocia cada dato de tu feed con el campo de MercaCoches (ya sugerimos el más probable).</p>
+      <div class="map-grid" id="mapGrid"></div>
+      <h2>Vista previa</h2>
+      <div style="overflow:auto"><table id="sampleTbl"></table></div>
+      <div class="row" style="margin-top:16px">
+        <div><label><input type="checkbox" id="fauto" style="width:auto;display:inline;margin-right:6px">Sincronizar automáticamente</label></div>
+        <div><label>Cada (minutos)</label><input id="finterval" type="number" value="360"></div>
+      </div>
+      <div style="margin-top:16px"><button class="btn" id="btnSave" onclick="saveAndSync()">Guardar e importar ahora →</button></div>
+    </div>
+
+    <h2>Tus feeds</h2>
+    <div class="card" id="feedsCard"><p class="muted">Cargando…</p></div>
+  </div>
+</div>
+<script>
+const TOKEN = (()=>{try{return localStorage.getItem('al_token')}catch(e){return null}})();
+let PREVIEW=null, EDIT_ID=null;
+async function API(path,opts={}){
+  const r=await fetch('/api'+path,{method:opts.method||'GET',headers:{'Content-Type':'application/json',...(TOKEN?{'Authorization':'Bearer '+TOKEN}:{})},body:opts.body?JSON.stringify(opts.body):undefined});
+  const d=await r.json().catch(()=>({})); if(!r.ok)throw new Error(d.error||('Error '+r.status)); return d;
+}
+function onType(){const t=document.getElementById('ftype').value;document.getElementById('srcUrl').classList.toggle('hidden',t==='url'?false:true);document.getElementById('srcFile').classList.toggle('hidden',t==='url');}
+function loadFile(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>document.getElementById('ftext').value=rd.result;rd.readAsText(f);}
+async function preview(){
+  const type=document.getElementById('ftype').value;
+  const btn=document.getElementById('btnPrev');btn.disabled=true;document.getElementById('prevMsg').textContent='Analizando…';
+  try{
+    const body={type,item_path:document.getElementById('fpath').value.trim()};
+    if(type==='url')body.source=document.getElementById('fsource').value.trim();
+    else body.text=document.getElementById('ftext').value;
+    PREVIEW=await API('/feeds/preview',{method:'POST',body});
+    document.getElementById('prevMsg').textContent='';
+    renderMap();
+  }catch(e){document.getElementById('prevMsg').innerHTML='<span class="err pill">'+e.message+'</span>';}
+  btn.disabled=false;
+}
+const LABELS={external_ref:'Referencia (ID único) *',brand:'Marca *',model:'Modelo *',year:'Año',price:'Precio *',km:'Kilómetros',fuel:'Combustible',gear:'Cambio',body:'Carrocería',power:'Potencia (CV)',color:'Color',province:'Provincia',doors:'Puertas',seats:'Plazas',desc:'Descripción',photos:'Imágenes (URLs)',extras:'Equipamiento'};
+function renderMap(){
+  document.getElementById('mapCard').classList.remove('hidden');
+  document.getElementById('detCount').textContent=PREVIEW.total;
+  const cols=PREVIEW.columns, map=EDIT_ID&&window._editMap?window._editMap:PREVIEW.suggestedMapping;
+  const opts='<option value="">— (ninguna) —</option>'+cols.map(c=>'<option>'+esc(c)+'</option>').join('');
+  document.getElementById('mapGrid').innerHTML=Object.keys(LABELS).map(f=>{
+    const sel=map[f]||'';
+    return '<div><label>'+LABELS[f]+'</label><select id="map_'+f+'">'+opts.replace('<option>'+esc(sel)+'</option>','<option selected>'+esc(sel)+'</option>')+'</select></div>';
+  }).join('');
+  const s=PREVIEW.sample;
+  document.getElementById('sampleTbl').innerHTML='<tr>'+PREVIEW.columns.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr>'+
+    s.map(r=>'<tr>'+PREVIEW.columns.map(c=>'<td>'+esc(String(r[c]??'').slice(0,60))+'</td>').join('')+'</tr>').join('');
+  document.getElementById('mapCard').scrollIntoView({behavior:'smooth'});
+}
+function collectMap(){const m={};Object.keys(LABELS).forEach(f=>{const v=document.getElementById('map_'+f).value;if(v)m[f]=v});return m;}
+async function saveAndSync(){
+  const btn=document.getElementById('btnSave');btn.disabled=true;btn.textContent='Importando…';
+  try{
+    const type=document.getElementById('ftype').value;
+    const feed={id:EDIT_ID||undefined,name:document.getElementById('fname').value||'Mi stock',type,mapping:collectMap(),item_path:document.getElementById('fpath').value.trim(),auto:document.getElementById('fauto').checked,interval_min:+document.getElementById('finterval').value||360};
+    if(type==='url')feed.source=document.getElementById('fsource').value.trim();
+    if(type!=='url')feed.auto=false; // los feeds de archivo no se resincronizan
+    const {id}=await API('/feeds',{method:'POST',body:feed});
+    const syncBody=type==='url'?{}:{text:document.getElementById('ftext').value};
+    const {report}=await API('/feeds/'+id+'/sync',{method:'POST',body:syncBody});
+    alert('Importación completada:\\n'+report.created+' creados · '+report.updated+' actualizados · '+report.sold+' marcados como vendidos'+(report.errors&&report.errors.length?'\\n'+report.errors.length+' con errores':''));
+    EDIT_ID=null;window._editMap=null;document.getElementById('mapCard').classList.add('hidden');
+    loadFeeds();
+  }catch(e){alert('Error: '+e.message);}
+  btn.disabled=false;btn.textContent='Guardar e importar ahora →';
+}
+async function loadFeeds(){
+  const el=document.getElementById('feedsCard');
+  try{
+    const {feeds}=await API('/feeds');
+    if(!feeds.length){el.innerHTML='<p class="muted">Aún no tienes ningún feed. Configura uno arriba para importar tu stock.</p>';return;}
+    el.innerHTML=feeds.map(f=>{
+      const r=f.last_result||{};const st=f.status==='ok'?'ok':f.status==='error'?'err':f.status==='running'?'run':'';
+      return '<div class="feed-item"><div><b>'+esc(f.name)+'</b> <span class="pill '+st+'">'+f.status+'</span><br>'+
+        '<small>'+f.type.toUpperCase()+(f.source?' · '+esc(f.source.slice(0,50)):'')+(f.auto?' · auto cada '+f.interval_min+' min':'')+'</small><br>'+
+        (f.last_sync?'<small>Última sync: '+new Date(f.last_sync).toLocaleString('es-ES')+' — <b>'+(r.created||0)+'</b> nuevos, <b>'+(r.updated||0)+'</b> actualizados, <b>'+(r.sold||0)+'</b> vendidos'+(r.errors&&r.errors.length?', <span class="err">'+r.errors.length+' errores</span>':'')+'</small>':'<small>Sin sincronizar todavía</small>')+
+        '</div><div style="white-space:nowrap"><button class="btn btn-ghost" onclick="syncNow('+f.id+')">Sincronizar</button> <button class="btn btn-ghost" onclick="delFeed('+f.id+')">✕</button></div></div>';
+    }).join('');
+  }catch(e){el.innerHTML='<p class="err">'+e.message+'</p>';}
+}
+async function syncNow(id){try{const {report}=await API('/feeds/'+id+'/sync',{method:'POST'});alert('Sincronizado: '+report.created+' nuevos, '+report.updated+' actualizados, '+report.sold+' vendidos'+(report.errors&&report.errors.length?', '+report.errors.length+' errores':''));loadFeeds();}catch(e){alert(e.message.includes('archivo')?'Este feed se importó desde un archivo y no se resincroniza. Vuelve a subir el archivo o usa una URL de feed para sync automática.':'Error: '+e.message);}}
+async function delFeed(id){if(!confirm('¿Borrar este feed? Los coches ya publicados no se borran.'))return;try{await API('/feeds/'+id,{method:'DELETE'});loadFeeds();}catch(e){alert(e.message);}}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+if(!TOKEN){document.getElementById('needlogin').classList.remove('hidden');}
+else{document.getElementById('main').classList.remove('hidden');onType();loadFeeds();}
+</script></body></html>`;
+}
+
 /* ---------- Servidor ---------- */
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
@@ -1043,6 +1258,7 @@ Dato clave: la mayoría de portales de coches en España cobran a los profesiona
 Contacto: ${CONTACT_EMAIL}
 `);
   }
+  if (p === '/importar' || p === '/importar-stock') return sendHtml(res, 200, importPageHtml());
   if (p === '/concesionarios' || p === '/compraventas' || p === '/profesionales') return ssrDealersPage(res);
   const mProv = p.match(/^\/concesionarios\/([a-z0-9-]+)\/?$/);
   if (mProv) {
@@ -1078,3 +1294,7 @@ Contacto: ${CONTACT_EMAIL}
   return serveStatic(res, path.join(__dirname, 'index.html'));
 });
 server.listen(PORT, () => console.log(`\n  MercaCoches en marcha  ->  http://localhost:${PORT}\n`));
+
+/* Arranca el planificador de sincronizaciones automáticas de stock.
+   (Interfaz sustituible por BullMQ repeatable jobs cuando haya volumen.) */
+try { sync.startScheduler(60000); } catch (e) { console.error('scheduler:', e.message); }

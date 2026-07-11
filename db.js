@@ -43,6 +43,22 @@ CREATE TABLE IF NOT EXISTS alerts(
   user_id INTEGER NOT NULL, name TEXT NOT NULL, query TEXT NOT NULL,
   created INTEGER NOT NULL, notified INTEGER DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS feeds(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner_id INTEGER NOT NULL,
+  name TEXT DEFAULT 'Mi stock',
+  type TEXT NOT NULL DEFAULT 'csv',        -- csv | xlsx | xml | json | url
+  source TEXT DEFAULT '',                  -- URL del feed (si aplica)
+  mapping TEXT DEFAULT '{}',               -- mapa columna->campo (JSON)
+  item_path TEXT DEFAULT '',               -- ruta al array de vehículos (XML/JSON)
+  auto INTEGER DEFAULT 0,                   -- sincronización automática on/off
+  interval_min INTEGER DEFAULT 360,        -- cada cuántos minutos
+  last_sync INTEGER DEFAULT 0,
+  next_sync INTEGER DEFAULT 0,
+  last_result TEXT DEFAULT '{}',           -- {created,updated,sold,errors,total,ts}
+  status TEXT DEFAULT 'idle',              -- idle | running | ok | error
+  created INTEGER NOT NULL
+);
 `);
 
 /* ---- Migraciones (columnas nuevas sobre bases existentes) ---- */
@@ -52,6 +68,8 @@ function addCol(table, colDef) {
 addCol('users', "role TEXT NOT NULL DEFAULT 'user'");        // 'user' | 'admin'
 addCol('users', 'verified INTEGER NOT NULL DEFAULT 0');      // email verificado
 addCol('users', 'banned INTEGER NOT NULL DEFAULT 0');        // bloqueado por admin
+addCol('cars', 'external_ref TEXT DEFAULT NULL');            // referencia del vehículo en el feed del profesional
+addCol('cars', 'feed_id INTEGER DEFAULT NULL');             // feed del que proviene el coche
 
 /* Índices para rendimiento con muchos anuncios */
 db.exec(`
@@ -60,6 +78,9 @@ CREATE INDEX IF NOT EXISTS idx_cars_owner ON cars(owner_id);
 CREATE INDEX IF NOT EXISTS idx_cars_brand ON cars(brand);
 CREATE INDEX IF NOT EXISTS idx_msgs_thread ON messages(thread_id);
 CREATE INDEX IF NOT EXISTS idx_alerts_user ON alerts(user_id);
+CREATE INDEX IF NOT EXISTS idx_cars_feed ON cars(feed_id);
+CREATE INDEX IF NOT EXISTS idx_cars_extref ON cars(owner_id, external_ref);
+CREATE INDEX IF NOT EXISTS idx_feeds_owner ON feeds(owner_id);
 `);
 
 /* El email indicado en ADMIN_EMAIL se convierte en administrador al arrancar */
