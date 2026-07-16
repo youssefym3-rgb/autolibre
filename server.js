@@ -360,6 +360,24 @@ async function api(req, res, url) {
   }
 
   // ----- CARS -----
+  // ----- VALORADOR: estimacion de precio de un coche a partir del stock real -----
+  if (p === '/api/valorar' && method === 'GET') {
+    const brand = (q.brand||'').trim(), model=(q.model||'').trim();
+    const year = parseInt(q.year,10)||0, km = parseInt(String(q.km||'').replace(/\D/g,''),10)||0;
+    if (!brand || !year) return send(res, 400, { error: 'Indica al menos marca y año.' });
+    const avg = rows => { const a=rows.filter(r=>r.price>0); if(!a.length) return null; return { n:a.length, price: Math.round(a.reduce((s,r)=>s+r.price,0)/a.length), avgKm: Math.round(a.reduce((s,r)=>s+(r.km||0),0)/a.length) }; };
+    let base=null, method='';
+    if (model) { base = avg(db.prepare("SELECT price,km FROM cars WHERE status='active' AND brand=? AND model=? AND year BETWEEN ? AND ?").all(brand,model,year-2,year+2)); if(base&&base.n>=3) method='modelo'; else base=null; }
+    if (!base) { base = avg(db.prepare("SELECT price,km FROM cars WHERE status='active' AND brand=? AND year BETWEEN ? AND ?").all(brand,year-2,year+2)); if(base&&base.n>=3) method='marca'; else base=null; }
+    if (!base) { base = avg(db.prepare("SELECT price,km FROM cars WHERE status='active' AND year BETWEEN ? AND ?").all(year-2,year+2)); if(base&&base.n>=5) method='mercado'; else base=null; }
+    if (!base) return send(res, 200, { enough:false, msg:'Aun no tenemos suficientes coches parecidos publicados para una estimacion fiable. Publica tu coche gratis y deja que el mercado te haga ofertas.' });
+    // Ajuste suave por kilometros respecto a la media de los comparables
+    let est = base.price;
+    if (km && base.avgKm) { const diff = (base.avgKm - km) / 100000; est = Math.round(est * (1 + Math.max(-0.25, Math.min(0.25, diff*0.15)))); }
+    est = Math.max(300, est);
+    const conf = method==='modelo' ? 'alta' : method==='marca' ? 'media' : 'orientativa';
+    return send(res, 200, { enough:true, estimate: est, low: Math.round(est*0.9/100)*100, high: Math.round(est*1.1/100)*100, sample: base.n, method, confianza: conf });
+  }
   if (p === '/api/cars' && method === 'GET') {
     const rows = queryCars(q);
     // Paginación opcional (?limit=24&offset=0). Sin limit se devuelven todos (compatibilidad).
@@ -1020,6 +1038,66 @@ ${faqs.map(f => `<h2 style="font-size:16px;margin:18px 0 4px">${esc(f[0])}</h2><
   return sendHtml(res, 200, pageShell(title, body, meta));
 }
 
+/* ---------- Valorador: cuanto vale mi coche (iman de leads + SEO) ---------- */
+function ssrValorarPage(res) {
+  const title = 'Cuanto vale mi coche: calcula su precio gratis | MercaCoches';
+  const desc = 'Calcula gratis cuanto vale tu coche de segunda mano con datos reales del mercado espanol. Estimacion orientativa por marca, modelo, ano y kilometros. Y publica tu anuncio gratis, sin comisiones.';
+  const faqs = [
+    ['Como se calcula el valor de mi coche?',
+     'MercaCoches estima el precio comparando tu coche (marca, modelo, ano y kilometros) con los anuncios reales publicados en el portal. Cuantos mas coches parecidos haya, mas fiable es la estimacion. Es un valor orientativo: el precio final lo marca el mercado y el estado real del vehiculo.'],
+    ['Cuanto cuesta valorar mi coche?',
+     'Nada, es gratis. Y publicar tu anuncio para venderlo tambien: sin comisiones, sin cuotas y sin intermediarios.'],
+    ['El valor incluye lo que pagaria un concesionario?',
+     'La estimacion refleja el precio de venta a particular (lo que pediria un vendedor en el portal). Un concesionario que compra para revender suele ofrecer menos; vendiendo directamente a particular en MercaCoches te quedas con la diferencia.']
+  ];
+  const faqld = { '@context':'https://schema.org','@type':'FAQPage', mainEntity: faqs.map(f=>({'@type':'Question',name:f[0],acceptedAnswer:{'@type':'Answer',text:f[1]}})) };
+  const meta = `
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${BASE_URL}/cuanto-vale-mi-coche">
+<meta property="og:type" content="website"><meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${BASE_URL}/cuanto-vale-mi-coche">
+<meta property="og:image" content="${BASE_URL}/og.png"><meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">${JSON.stringify(faqld)}</script>`;
+  const body = `
+<p style="font-size:13px;color:#6b7a89"><a href="/">Inicio</a> &rsaquo; Valorar coche</p>
+<h1>Cuanto vale mi coche?</h1>
+<p>Calcula gratis el precio orientativo de tu coche de segunda mano con datos reales del mercado. Rellena estos campos:</p>
+<div style="max-width:520px;border:1px solid var(--line,#2C2C2E);border-radius:14px;padding:18px;margin:14px 0;background:rgba(255,255,255,.02)">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div><label style="font-size:13px;display:block;margin-bottom:4px">Marca *</label><input id="vBrand" placeholder="BMW" style="width:100%;padding:10px;border-radius:8px;border:1px solid #2C2C2E;background:#0f0f10;color:#F5F5F7"></div>
+    <div><label style="font-size:13px;display:block;margin-bottom:4px">Modelo</label><input id="vModel" placeholder="Serie 3" style="width:100%;padding:10px;border-radius:8px;border:1px solid #2C2C2E;background:#0f0f10;color:#F5F5F7"></div>
+    <div><label style="font-size:13px;display:block;margin-bottom:4px">Ano *</label><input id="vYear" type="number" placeholder="2018" style="width:100%;padding:10px;border-radius:8px;border:1px solid #2C2C2E;background:#0f0f10;color:#F5F5F7"></div>
+    <div><label style="font-size:13px;display:block;margin-bottom:4px">Kilometros</label><input id="vKm" type="number" placeholder="95000" style="width:100%;padding:10px;border-radius:8px;border:1px solid #2C2C2E;background:#0f0f10;color:#F5F5F7"></div>
+  </div>
+  <button onclick="valorar()" class="btn" style="margin-top:14px">Calcular valor &rarr;</button>
+  <div id="vResult" style="margin-top:14px"></div>
+</div>
+<h2>Preguntas frecuentes</h2>
+${faqs.map(f=>`<h2 style="font-size:16px;margin:18px 0 4px">${esc(f[0])}</h2><p>${esc(f[1])}</p>`).join('')}
+<p><a class="btn" href="/#publish">Publicar mi coche gratis &rarr;</a></p>
+<p><a href="/vender-mi-coche">Guia: vender mi coche</a> &middot; <a href="/coches">Ver coches de segunda mano</a></p>
+<script>
+async function valorar(){
+  const b=document.getElementById('vBrand').value.trim(), m=document.getElementById('vModel').value.trim(), y=document.getElementById('vYear').value, k=document.getElementById('vKm').value;
+  const out=document.getElementById('vResult');
+  if(!b||!y){out.innerHTML='<span style="color:#ff6b6b">Indica al menos marca y ano.</span>';return;}
+  out.innerHTML='Calculando...';
+  try{
+    const p=new URLSearchParams({brand:b,model:m,year:y,km:k});
+    const r=await fetch('/api/valorar?'+p.toString()); const d=await r.json();
+    if(!r.ok){out.innerHTML='<span style="color:#ff6b6b">'+(d.error||'Error')+'</span>';return;}
+    if(!d.enough){out.innerHTML='<div style="background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.4);border-radius:10px;padding:14px">'+d.msg+' <a href="/#publish">Publicar gratis &rarr;</a></div>';return;}
+    out.innerHTML='<div style="background:rgba(22,199,132,.1);border:1px solid rgba(22,199,132,.4);border-radius:10px;padding:16px">'
+      +'<div style="font-size:14px;color:#8a8a90">Valor orientativo estimado</div>'
+      +'<div style="font-size:30px;font-weight:800;color:#16c784">'+d.estimate.toLocaleString("es-ES")+' &euro;</div>'
+      +'<div style="font-size:14px;color:#aeaeb2">Rango: '+d.low.toLocaleString("es-ES")+' &ndash; '+d.high.toLocaleString("es-ES")+' &euro; &middot; fiabilidad '+d.confianza+' ('+d.sample+' coches similares)</div>'
+      +'<a class="btn" style="margin-top:12px" href="/#publish">Vender mi coche por este precio &rarr;</a></div>';
+  }catch(e){out.innerHTML='<span style="color:#ff6b6b">Error al calcular.</span>';}
+}
+</script>`;
+  return sendHtml(res, 200, pageShell(title, body, meta));
+}
+
 /* ---------- Página para concesionarios y compraventas (SEO + GEO) ---------- */
 function ssrDealersPage(res) {
   const nPro = db.prepare("SELECT COUNT(DISTINCT owner_id) c FROM cars WHERE status='active' AND seller_type='pro'").get().c;
@@ -1256,6 +1334,7 @@ function ssrSitemap(res) {
     ...FUEL_PAGES.filter(f => distinctActive('fuel').includes(f[1])).map(f => `${BASE_URL}/coches/${f[0]}`),
     ...BODY_PAGES.filter(b => distinctActive('body').includes(b[1])).map(b => `${BASE_URL}/coches/${b[0]}`),
     ...Object.keys(ALTERNATIVAS).map(k => `${BASE_URL}/alternativa-a-${k}`),
+    BASE_URL + '/cuanto-vale-mi-coche',
     ...PRICE_PAGES.filter(n => db.prepare("SELECT 1 FROM cars WHERE status='active' AND price<=? LIMIT 1").get(n)).map(n => `${BASE_URL}/coches/hasta-${n}`),
     ...cars.map(c => `${BASE_URL}/coche/${c.id}`)
   ];
@@ -1481,6 +1560,7 @@ Contacto: ${CONTACT_EMAIL}
     return ssrDealersPage(res);
   }
   if (p === '/donde-publicar-coches-gratis') return ssrGuidePage(res);
+  if (p === '/cuanto-vale-mi-coche' || p === '/valorar-coche' || p === '/tasar-coche') return ssrValorarPage(res);
   const mAlt = p.match(/^\/alternativa-a-([a-z0-9-]+)\/?$/);
   if (mAlt && ALTERNATIVAS[mAlt[1]]) return ssrAlternativaPage(res, mAlt[1]);
   // Captación de vendedores: "vender mi coche" (lo que la gente busca de verdad)
