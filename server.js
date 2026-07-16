@@ -1098,6 +1098,154 @@ async function valorar(){
   return sendHtml(res, 200, pageShell(title, body, meta));
 }
 
+/* ---------- Cluster de guías transaccionales (contenido SEO preciso) ---------- */
+const CONTRATO_TXT = `CONTRATO DE COMPRAVENTA DE VEHÍCULO ENTRE PARTICULARES
+
+En ____________________, a ____ de ____________ de 20__.
+
+REUNIDOS
+VENDEDOR: D./Dña. ____________________, con DNI/NIE ____________,
+domicilio en ____________________.
+COMPRADOR: D./Dña. ____________________, con DNI/NIE ____________,
+domicilio en ____________________.
+
+DATOS DEL VEHÍCULO
+Marca y modelo: ____________________
+Matrícula: ____________   Nº de bastidor (VIN): ____________________
+Kilómetros: ____________   Fecha de matriculación: ____________
+ITV en vigor hasta: ____________
+
+ACUERDAN
+1. El vendedor vende al comprador el vehículo descrito por el precio de
+   ____________ €, que el comprador abona en este acto (o según se pacte).
+2. El vendedor declara que el vehículo está libre de cargas, embargos y
+   reservas de dominio, y al corriente del Impuesto de Circulación (IVTM).
+3. El vehículo se entrega en el estado en que se encuentra, que el
+   comprador declara conocer y aceptar.
+4. A partir de la firma, el comprador asume la posesión, uso, gastos,
+   sanciones y responsabilidades derivadas del vehículo, y se compromete
+   a tramitar el cambio de titularidad en la DGT.
+5. Ambas partes se comprometen a firmar cuantos documentos sean
+   necesarios para el cambio de nombre.
+
+Se firma por duplicado y a un solo efecto.
+
+EL VENDEDOR                          EL COMPRADOR
+
+Firma: ____________                  Firma: ____________
+
+------------------------------------------------------------------
+Plantilla gratuita de MercaCoches (mercacoches.es). Documento
+orientativo; adáptalo a tu caso y conserva una copia cada parte.`;
+
+const GUIAS = {
+  'contrato-compraventa-coche': {
+    title: 'Contrato de compraventa de coche: plantilla gratis (PDF/Word) 2026',
+    desc: 'Descarga gratis una plantilla de contrato de compraventa de coche entre particulares y aprende qué datos debe incluir para vender con seguridad. Válido para el cambio de nombre en la DGT.',
+    h1: 'Contrato de compraventa de coche entre particulares',
+    intro: 'El contrato de compraventa es el documento que acredita que has vendido (o comprado) el coche y en qué condiciones. No es obligatorio presentarlo para el cambio de nombre, pero es muy recomendable: protege a ambas partes y deja claro que, desde la firma, la responsabilidad del vehículo pasa al comprador.',
+    sections: [
+      ['Descarga la plantilla gratis', '<p>Puedes descargar una plantilla lista para rellenar aquí:</p><p><a class="btn" href="/plantilla-contrato-compraventa.txt" download>Descargar plantilla de contrato (.txt) &rarr;</a></p><p style="font-size:13px;color:#6b7a89">Ábrela con cualquier editor (Word, Google Docs, Notas), rellena los huecos e imprime dos copias, una para cada parte.</p>'],
+      ['Qué datos debe incluir', '<ul><li>Datos del <b>vendedor</b> y del <b>comprador</b> (nombre y DNI/NIE).</li><li>Datos del <b>vehículo</b>: marca, modelo, matrícula, número de bastidor (VIN) y kilómetros.</li><li><b>Precio</b> y forma de pago.</li><li>Declaración de que el coche está <b>libre de cargas</b> y al día del impuesto de circulación.</li><li>Fecha, lugar y <b>firma de ambas partes</b> (por duplicado).</li></ul>'],
+      ['Consejo', '<p>Antes de firmar, pide o descarga el <a href="/informe-dgt-coche">informe de la DGT</a> del vehículo para comprobar que no tiene cargas ni embargos, y que el kilometraje es coherente.</p>']
+    ],
+    faqs: [
+      ['¿Es obligatorio el contrato de compraventa para vender un coche?', 'No es obligatorio presentarlo en la DGT, pero sí muy recomendable: es la prueba de la venta y de que la responsabilidad pasa al comprador desde la firma. Sin él, ante una multa o un impago podrías tener problemas.'],
+      ['¿Vale un contrato hecho a mano?', 'Sí, mientras contenga los datos de ambas partes, del vehículo, el precio, la fecha y las firmas. Nuestra plantilla te asegura que no se te olvida nada.'],
+      ['¿Cuántas copias necesito?', 'Dos: una para el comprador y otra para el vendedor. Conserva la tuya al menos hasta que el cambio de nombre esté completado.']
+    ]
+  },
+  'cambio-de-nombre-coche': {
+    title: 'Cambio de nombre de un coche 2026: pasos, precio y documentos',
+    desc: 'Cómo hacer el cambio de nombre (cambio de titularidad) de un coche en la DGT: documentos necesarios, precio de la tasa, plazo y cómo hacerlo online o en una gestoría.',
+    h1: 'Cambio de nombre de un coche: guía 2026',
+    intro: 'El cambio de nombre (o cambio de titularidad) es el trámite por el que la DGT pone el coche a nombre del nuevo propietario. Debe hacerlo el comprador tras la compra.',
+    sections: [
+      ['Documentos necesarios', '<ul><li>Solicitud de cambio de titularidad (impreso de la DGT).</li><li>DNI/NIE del comprador y del vendedor.</li><li>Permiso de circulación y ficha técnica (con la ITV en vigor).</li><li>Contrato de compraventa o justificante de la operación.</li><li>Justificante del pago del <a href="/impuesto-itp-coche-segunda-mano">Impuesto de Transmisiones (ITP)</a>.</li></ul>'],
+      ['Precio', '<p>La <b>tasa de la DGT</b> para turismos ronda los <b>55&nbsp;€</b> (consulta la tasa vigente en la sede de la DGT). A eso se suma el <b>ITP</b>, que depende de tu comunidad y del valor del coche, y la <b>gestoría</b> si decides no hacerlo tú mismo (suele cobrar entre 60 y 120&nbsp;€ por gestionarlo todo).</p>'],
+      ['Plazo y cómo hacerlo', '<p>Tienes <b>15 días hábiles</b> desde la compra para iniciarlo. Puedes hacerlo tú mismo con cita previa en Tráfico o por la sede electrónica de la DGT (con certificado digital o Cl@ve), o encargarlo a una gestoría.</p>']
+    ],
+    faqs: [
+      ['¿Cuánto cuesta cambiar el nombre de un coche?', 'La tasa de la DGT para turismos ronda los 55 €; a eso se suma el ITP (variable según comunidad y valor del coche) y, si lo gestionas por gestoría, su comisión (60-120 € aprox.). Verifica siempre las cifras vigentes en la DGT y tu comunidad.'],
+      ['¿Quién paga el cambio de nombre, comprador o vendedor?', 'Lo paga y lo tramita el comprador. El vendedor solo debe entregar la documentación y, opcionalmente, notificar la venta a la DGT para desligarse de responsabilidades.'],
+      ['¿Puedo hacer el cambio de nombre online?', 'Sí, por la sede electrónica de la DGT si tienes certificado digital o Cl@ve, o a través de una gestoría autorizada.']
+    ]
+  },
+  'impuesto-itp-coche-segunda-mano': {
+    title: 'ITP de un coche de segunda mano 2026: cuánto se paga por comunidad',
+    desc: 'Qué es el Impuesto de Transmisiones Patrimoniales (ITP) al comprar un coche usado a un particular, cuánto se paga según la comunidad autónoma y cómo se calcula.',
+    h1: 'ITP: el impuesto al comprar un coche de segunda mano',
+    intro: 'Cuando compras un coche usado a un particular tienes que pagar el Impuesto de Transmisiones Patrimoniales (ITP). Lo paga el comprador y se gestiona en la comunidad autónoma.',
+    sections: [
+      ['Cuánto se paga', '<p>El tipo <b>varía según la comunidad autónoma</b>, normalmente entre el <b>4% y el 8%</b>. Se aplica sobre el <b>mayor</b> de estos dos valores: el precio de venta que figura en el contrato, o el <b>valor fiscal</b> del coche (las tablas oficiales de Hacienda, que parten del precio de nuevo y aplican un porcentaje de depreciación según la antigüedad).</p><p style="font-size:13px;color:#6b7a89">Como los tipos y bonificaciones cambian por comunidad y por año, confirma el porcentaje exacto en la web de Hacienda de tu comunidad.</p>'],
+      ['Cómo se calcula (ejemplo)', '<p>Si el valor fiscal de tu coche es de 8.000&nbsp;€ y tu comunidad aplica un 4%, el ITP será de <b>320&nbsp;€</b>. Si el precio de compra fuera mayor que el valor fiscal, se aplicaría sobre el precio.</p>'],
+      ['Plazo', '<p>Dispones de <b>30 días hábiles</b> desde la fecha del contrato para presentar y pagar el ITP (modelo 620/621 según la comunidad). Necesitarás el justificante para el <a href="/cambio-de-nombre-coche">cambio de nombre</a>.</p>']
+    ],
+    faqs: [
+      ['¿Quién paga el ITP de un coche usado?', 'Siempre el comprador. El vendedor no paga ITP (aunque si vende con ganancia debe declararla en su IRPF, algo poco habitual en coches, que suelen venderse por debajo del precio de compra).'],
+      ['¿Se paga ITP si compro a un concesionario?', 'No: si compras a un profesional que factura con IVA, no pagas ITP. El ITP solo aplica en compras entre particulares.'],
+      ['¿Sobre qué valor se calcula el ITP?', 'Sobre el mayor entre el precio del contrato y el valor fiscal oficial de Hacienda para ese coche (según marca, modelo y antigüedad).']
+    ]
+  },
+  'papeles-para-vender-un-coche': {
+    title: 'Qué papeles necesito para vender mi coche (2026)',
+    desc: 'Lista completa de los documentos que necesitas para vender tu coche de segunda mano a un particular con seguridad y sin problemas posteriores.',
+    h1: 'Papeles necesarios para vender tu coche',
+    intro: 'Vender tu coche a un particular es sencillo si llevas la documentación en regla. Esto es todo lo que necesitas:',
+    sections: [
+      ['Documentos imprescindibles', '<ul><li><b>Permiso de circulación</b> del vehículo.</li><li><b>Ficha técnica (tarjeta de ITV)</b> con la <b>ITV en vigor</b>.</li><li><b>DNI/NIE</b> de vendedor y comprador.</li><li><b>Contrato de compraventa</b> (usa nuestra <a href="/contrato-compraventa-coche">plantilla gratis</a>).</li><li>Justificante del <b>Impuesto de Circulación (IVTM)</b> al día.</li></ul>'],
+      ['Muy recomendable', '<ul><li><b>Informe de la DGT</b> del vehículo, para demostrar que está libre de cargas (te da confianza como vendedor). <a href="/informe-dgt-coche">Cómo obtenerlo</a>.</li><li>Facturas de mantenimiento y libro de revisiones: aumentan el valor y la confianza.</li></ul>'],
+      ['Después de vender', '<p>Notifica la venta a la DGT (trámite gratuito) para desligarte de multas y responsabilidades hasta que el comprador haga el cambio de nombre.</p>']
+    ],
+    faqs: [
+      ['¿Necesito pasar la ITV para vender el coche?', 'El coche debe tener la ITV en vigor en el momento de la venta. Si está caducada, o la pasas tú antes de vender, o lo pactáis por escrito y el comprador la asume (algunos compradores lo aceptan a cambio de un precio menor).'],
+      ['¿Puedo vender un coche con multas o impuestos pendientes?', 'Deberías estar al día del impuesto de circulación. Si hay cargas o embargos, aparecerán en el informe de la DGT y dificultarán la venta y el cambio de nombre.'],
+      ['¿Qué hago para no recibir las multas del comprador?', 'Notifica la venta a la DGT nada más firmar el contrato. Así quedas libre de responsabilidad aunque el comprador tarde en hacer el cambio de nombre.']
+    ]
+  },
+  'informe-dgt-coche': {
+    title: 'Cómo saber si un coche tiene cargas: informe de la DGT (2026)',
+    desc: 'Cómo obtener el informe de un vehículo de la DGT para saber si un coche de segunda mano tiene cargas, embargos, precintos o problemas antes de comprarlo.',
+    h1: 'Cómo saber si un coche tiene cargas: el informe de la DGT',
+    intro: 'Antes de comprar un coche de segunda mano conviene comprobar que no arrastra problemas. El informe de vehículo de la DGT te lo dice todo por unos pocos euros.',
+    sections: [
+      ['Qué muestra el informe', '<ul><li><b>Cargas, embargos y precintos</b> que impidan o compliquen la venta.</li><li>Historial de <b>titulares</b> y de <b>ITV</b>.</li><li><b>Kilometraje</b> registrado en las ITV (para detectar manipulaciones del cuentakilómetros).</li><li>Si el vehículo consta como <b>robado</b> o dado de baja.</li></ul>'],
+      ['Cómo obtenerlo', '<p>Se solicita en la <b>sede electrónica de la DGT</b> (con certificado digital o Cl@ve) o presencialmente en una Jefatura de Tráfico. El <b>informe reducido</b> cuesta unos <b>8-9&nbsp;€</b>. Solo necesitas la matrícula o el número de bastidor.</p>'],
+      ['Cuándo pedirlo', '<p>Antes de firmar el <a href="/contrato-compraventa-coche">contrato de compraventa</a>. Si eres el vendedor, tenerlo a mano transmite confianza y agiliza la venta.</p>']
+    ],
+    faqs: [
+      ['¿Cuánto cuesta el informe de la DGT de un coche?', 'El informe reducido de vehículo cuesta alrededor de 8-9 € (consulta la tasa vigente en la DGT). Existe también un informe completo algo más caro.'],
+      ['¿Puedo pedir el informe de cualquier coche?', 'Sí, el informe reducido puede solicitarlo cualquiera con la matrícula del vehículo; no hace falta ser el propietario.'],
+      ['¿Cómo sé si le han manipulado los kilómetros?', 'El informe muestra los kilómetros registrados en cada ITV. Si el cuentakilómetros actual es menor que el de una ITV pasada, ha sido manipulado.']
+    ]
+  }
+};
+
+function ssrGuiaPage(res, slug) {
+  const g = GUIAS[slug];
+  const faqld = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: g.faqs.map(f => ({ '@type': 'Question', name: f[0], acceptedAnswer: { '@type': 'Answer', text: f[1] } })) };
+  const artld = { '@context': 'https://schema.org', '@type': 'Article', headline: g.h1, description: g.desc, author: { '@type': 'Organization', name: 'MercaCoches' }, publisher: { '@type': 'Organization', name: 'MercaCoches' } };
+  const meta = `
+<meta name="description" content="${esc(g.desc)}">
+<link rel="canonical" href="${BASE_URL}/${slug}">
+<meta property="og:type" content="article"><meta property="og:title" content="${esc(g.title)}">
+<meta property="og:description" content="${esc(g.desc)}"><meta property="og:url" content="${BASE_URL}/${slug}">
+<meta property="og:image" content="${BASE_URL}/og.png"><meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">${JSON.stringify(faqld)}</script>
+<script type="application/ld+json">${JSON.stringify(artld)}</script>`;
+  const otras = Object.keys(GUIAS).filter(k => k !== slug).map(k => `<a href="/${k}">${esc(GUIAS[k].h1)}</a>`).join('');
+  const body = `
+<p style="font-size:13px;color:#6b7a89"><a href="/">Inicio</a> &rsaquo; Guías &rsaquo; ${esc(g.h1)}</p>
+<h1>${esc(g.h1)}</h1>
+<p>${esc(g.intro)}</p>
+${g.sections.map(s => `<h2>${esc(s[0])}</h2>${s[1]}`).join('')}
+<h2>Preguntas frecuentes</h2>
+${g.faqs.map(f => `<h2 style="font-size:16px;margin:18px 0 4px">${esc(f[0])}</h2><p>${esc(f[1])}</p>`).join('')}
+<p style="margin-top:18px"><a class="btn" href="/#publish">Publicar mi coche gratis &rarr;</a></p>
+<div class="linkbox"><h2>Más guías</h2>${otras}<a href="/vender-mi-coche">Vender mi coche</a><a href="/cuanto-vale-mi-coche">Cuánto vale mi coche</a></div>`;
+  return sendHtml(res, 200, pageShell(g.title, body, meta));
+}
+
 /* ---------- Página para concesionarios y compraventas (SEO + GEO) ---------- */
 function ssrDealersPage(res) {
   const nPro = db.prepare("SELECT COUNT(DISTINCT owner_id) c FROM cars WHERE status='active' AND seller_type='pro'").get().c;
@@ -1335,6 +1483,7 @@ function ssrSitemap(res) {
     ...BODY_PAGES.filter(b => distinctActive('body').includes(b[1])).map(b => `${BASE_URL}/coches/${b[0]}`),
     ...Object.keys(ALTERNATIVAS).map(k => `${BASE_URL}/alternativa-a-${k}`),
     BASE_URL + '/cuanto-vale-mi-coche',
+    ...Object.keys(GUIAS).map(k => `${BASE_URL}/${k}`),
     ...PRICE_PAGES.filter(n => db.prepare("SELECT 1 FROM cars WHERE status='active' AND price<=? LIMIT 1").get(n)).map(n => `${BASE_URL}/coches/hasta-${n}`),
     ...cars.map(c => `${BASE_URL}/coche/${c.id}`)
   ];
@@ -1561,6 +1710,8 @@ Contacto: ${CONTACT_EMAIL}
   }
   if (p === '/donde-publicar-coches-gratis') return ssrGuidePage(res);
   if (p === '/cuanto-vale-mi-coche' || p === '/valorar-coche' || p === '/tasar-coche') return ssrValorarPage(res);
+  if (p === '/plantilla-contrato-compraventa.txt') { res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Content-Disposition': 'attachment; filename="contrato-compraventa.txt"', ...SEC_HEADERS }); return res.end(CONTRATO_TXT); }
+  if (GUIAS[p.replace(/^\//,'').replace(/\/$/,'')]) return ssrGuiaPage(res, p.replace(/^\//,'').replace(/\/$/,''));
   const mAlt = p.match(/^\/alternativa-a-([a-z0-9-]+)\/?$/);
   if (mAlt && ALTERNATIVAS[mAlt[1]]) return ssrAlternativaPage(res, mAlt[1]);
   // Captación de vendedores: "vender mi coche" (lo que la gente busca de verdad)
